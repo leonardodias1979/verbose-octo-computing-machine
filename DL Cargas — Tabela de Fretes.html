@@ -1,38 +1,7 @@
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
-
-  :root {
-    --navy: #1C2740;
-    --navy-2: #293A5C;
-    --orange: #F0A93A;
-    --paper: #FAF9F6;
-    --line: #E3E0D8;
-    --ink: #22272E;
-    --muted: #6B7280;
-    --zone6: #FFF3CC;
-  }
-
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
-  body {
-    background: var(--paper);
-    color: var(--ink);
-    font-family: 'Inter', sans-serif;
-    padding: 22px;
-  }
-
-  .sheet {
-    max-width: 1400px;
-    margin: 0 auto;
-    background: #ffffff;
-    border: 1px solid var(--line);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-  }
-
-  /* ---- Header ---- */
+/* ---- Header / Topbar (Fundo Azul com Texto Branco) ---- */
   .topbar {
     background: var(--navy);
-    color: #ffffff;
+    color: #ffffff !important; /* Cor do texto geral do topo */
     padding: 14px 28px;
     display: flex;
     justify-content: space-between;
@@ -58,23 +27,31 @@
     font-weight: 700;
     margin: 0;
     letter-spacing: 0.2px;
+    color: #ffffff !important; /* Título em branco */
   }
   .topbar .sub {
-    color: var(--line);
+    color: #ffffff !important; /* Subtítulo em branco */
     font-size: 12px;
     margin-top: 4px;
     letter-spacing: 0.3px;
+    opacity: 0.9;
   }
   .topbar .contact {
     text-align: right;
     font-size: 11.5px;
     line-height: 1.6;
-    color: #ffffff;
+    color: #ffffff !important; /* Texto de contato em branco */
   }
-  .topbar .contact b { color: #fff; }
+  .topbar .contact b { 
+    color: #ffffff !important; /* Destaque de contato em branco */
+  }
+  .topbar a {
+    color: #ffffff !important; /* Links do topo em branco */
+  }
+
   .accent-bar { height: 4px; background: linear-gradient(90deg, var(--orange), #F5C877); }
 
-  /* ---- Main table ---- */
+  /* ---- Main table (Cabeçalho da Tabela Azul com Texto Branco) ---- */
   table.main {
     width: 100%;
     border-collapse: collapse;
@@ -82,7 +59,7 @@
   }
   table.main thead th {
     background: var(--navy-2);
-    color: #ffffff;
+    color: #ffffff !important; /* Força letras brancas nos títulos da tabela */
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 500;
     font-size: 11.5px;
@@ -92,119 +69,8 @@
     text-align: left;
     border-bottom: 2px solid var(--orange);
   }
+  table.main thead th * {
+    color: #ffffff !important; /* Garante que spans/elementos internos fiquem brancos */
+  }
   table.main thead th.price-col { text-align: center; }
-  table.main thead th .veic-name { display: block; font-size: 12.5px; }
-
-  table.main td {
-    padding: 9px 10px;
-    border-bottom: 1px solid var(--line);
-    vertical-align: top;
-  }
-  table.main tbody tr:nth-child(even) { background: #F5F4F0; }
-  table.main tbody tr.zone6 { background: var(--zone6); }
-
-  td.zone-cell {
-    width: 64px;
-    text-align: center;
-  }
-  td.zone-cell .num {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 20px;
-    color: var(--navy);
-    display: block;
-    line-height: 1;
-  }
-  td.zone-cell .code {
-    display: inline-block;
-    margin-top: 4px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    color: var(--muted);
-    background: #EFEDE7;
-    border-radius: 3px;
-    padding: 1px 4px;
-  }
-
-  td.cidades-cell {
-    color: #374151;
-    line-height: 1.55;
-  }
-
-  td.price-cell {
-    text-align: right;
-    font-family: 'IBM Plex Mono', monospace;
-    font-weight: 600;
-    font-size: 13px;
-    color: var(--navy);
-    width: 88px;
-  }
-  td.price-cell .cifra {
-    color: var(--muted);
-    font-weight: 500;
-    font-size: 10px;
-    margin-right: 2px;
-  }
-
-  /* ---- Footer strip ---- */
-  .footer {
-    display: grid;
-    grid-template-columns: 1.1fr 1.1fr 1.6fr;
-    gap: 0;
-    border-top: 2px solid var(--navy);
-  }
-  .footer .block {
-    padding: 14px 20px;
-    border-right: 1px solid var(--line);
-  }
-  .footer .block:last-child { border-right: none; }
-  .footer h3 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    color: var(--navy);
-    margin: 0 0 8px 0;
-    border-bottom: 1px solid var(--orange);
-    display: inline-block;
-    padding-bottom: 2px;
-  }
-  .footer .row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11.5px;
-    padding: 2px 0;
-  }
-  .footer .row span:first-child { color: #374151; }
-  .footer .row span:last-child {
-    font-family: 'IBM Plex Mono', monospace;
-    font-weight: 600;
-    color: var(--navy);
-  }
-  .footer .highlight {
-    color: #B8390E;
-    font-weight: 700;
-    font-size: 11px;
-    margin-top: 6px;
-    display: block;
-  }
-  .footer ul {
-    margin: 0;
-    padding-left: 16px;
-    font-size: 11px;
-    color: #374151;
-    line-height: 1.55;
-  }
-  .footer .contact-line {
-    font-size: 11px;
-    color: #374151;
-    line-height: 1.7;
-  }
-  .footer .contact-line b { color: var(--navy); }
-
-  @media print {
-    @page { size: A3 landscape; margin: 10mm; }
-    body { padding: 0; background: #ffffff; }
-    .sheet { box-shadow: none; border: none; }
-  }
-</style>
+  table.main thead th .veic-name { display: block; font-size: 12.5px; color: #ffffff !important; }
