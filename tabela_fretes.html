@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>DL Cargas — Tabela de Fretes</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root{
+    --navy:#1C2740;
+    --navy-2:#293A5C;
+    --orange:#F0A93A;
+    --paper:#FAF9F6;
+    --line:#E3E0D8;
+    --ink:#22272E;
+    --muted:#6B7280;
+    --zone6:#FFF3CC;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    padding:22px;
+  }
+
+  .sheet{
+    max-width:1400px;
+    margin:0 auto;
+    background:#fff;
+    border:1px solid var(--line);
+    box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  /* ---- Header ---- */
+  .topbar{
+    background:var(--navy);
+    color:#fff;
+    padding:18px 28px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:20px;
+  }
+  .topbar h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:22px;
+    font-weight:700;
+    margin:0;
+    letter-spacing:0.2px;
+  }
+  .topbar .sub{
+    color:#C9D2E8;
+    font-size:12px;
+    margin-top:4px;
+    letter-spacing:0.3px;
+  }
+  .topbar .contact{
+    text-align:right;
+    font-size:11.5px;
+    line-height:1.6;
+    color:#DCE3F2;
+  }
+  .topbar .contact b{color:#fff;}
+  .accent-bar{height:4px;background:linear-gradient(90deg,var(--orange),#F5C877);}
+
+  /* ---- Main table ---- */
+  table.main{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12.5px;
+  }
+  table.main thead th{
+    background:var(--navy-2);
+    color:#fff;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:500;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    padding:9px 10px;
+    text-align:left;
+    border-bottom:2px solid var(--orange);
+  }
+  table.main thead th.price-col{ text-align:center; }
+  table.main thead th .veic-name{ display:block; font-size:12.5px; }
+
+  table.main td{
+    padding:9px 10px;
+    border-bottom:1px solid var(--line);
+    vertical-align:top;
+  }
+  table.main tbody tr:nth-child(even){ background:#F5F4F0; }
+  table.main tbody tr.zone6{ background:var(--zone6); }
+
+  td.zone-cell{
+    width:64px;
+    text-align:center;
+  }
+  td.zone-cell .num{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:20px;
+    color:var(--navy);
+    display:block;
+    line-height:1;
+  }
+  td.zone-cell .code{
+    display:inline-block;
+    margin-top:4px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9px;
+    color:var(--muted);
+    background:#EFEDE7;
+    border-radius:3px;
+    padding:1px 4px;
+  }
+
+  td.cidades-cell{
+    color:#374151;
+    line-height:1.55;
+  }
+
+  td.price-cell{
+    text-align:right;
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:13px;
+    color:var(--navy);
+    width:88px;
+  }
+  td.price-cell .cifra{
+    color:var(--muted);
+    font-weight:500;
+    font-size:10px;
+    margin-right:2px;
+  }
+
+  /* ---- Footer strip ---- */
+  .footer{
+    display:grid;
+    grid-template-columns:1.1fr 1.1fr 1.6fr;
+    gap:0;
+    border-top:2px solid var(--navy);
+  }
+  .footer .block{
+    padding:14px 20px;
+    border-right:1px solid var(--line);
+  }
+  .footer .block:last-child{ border-right:none; }
+  .footer h3{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+    color:var(--navy);
+    margin:0 0 8px 0;
+    border-bottom:1px solid var(--orange);
+    display:inline-block;
+    padding-bottom:2px;
+  }
+  .footer .row{
+    display:flex;
+    justify-content:space-between;
+    font-size:11.5px;
+    padding:2px 0;
+  }
+  .footer .row span:first-child{ color:#374151; }
+  .footer .row span:last-child{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    color:var(--navy);
+  }
+  .footer .highlight{
+    color:#B8390E;
+    font-weight:700;
+    font-size:11px;
+    margin-top:6px;
+    display:block;
+  }
+  .footer ul{
+    margin:0;
+    padding-left:16px;
+    font-size:11px;
+    color:#374151;
+    line-height:1.55;
+  }
+  .footer .contact-line{
+    font-size:11px;
+    color:#374151;
+    line-height:1.7;
+  }
+  .footer .contact-line b{ color:var(--navy); }
+
+  @media print{
+    @page{ size: A3 landscape; margin:10mm; }
+    body{ padding:0; background:#fff; }
+    .sheet{ box-shadow:none; border:none; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="topbar">
+    <div>
+      <h1>Tabela de Fretes — DL Cargas</h1>
+      <div class="sub">Frete fixo por zona de destino e tipo de veículo</div>
+    </div>
+    <div class="contact">
+      <div><b>frota@dlcargas.com.br</b> · (21) 97511-4011</div>
+      <div>www.dlcargas.com.br</div>
+      <div>Rua Doutor Nunes, 1260 · Olaria · Rio de Janeiro-RJ</div>
+    </div>
+  </div>
+  <div class="accent-bar"></div>
+
+  <table class="main">
+    <thead>
+      <tr>
+        <th style="width:64px;">Zona</th>
+        <th>Cidades atendidas</th>
+        <th class="price-col"><span class="veic-name">Fiorino</span></th>
+        <th class="price-col"><span class="veic-name">VUC</span></th>
+        <th class="price-col"><span class="veic-name">3/4</span></th>
+        <th class="price-col"><span class="veic-name">Toco</span></th>
+        <th class="price-col"><span class="veic-name">Truck</span></th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <tr>
+        <td class="zone-cell"><span class="num">1</span><span class="code">MT1·MT2·MT3·MT4·BX</span></td>
+        <td class="cidades-cell">Belford Roxo, Duque de Caxias, Itaguaí, Japeri, Mesquita, Nilópolis, Nova Iguaçu, Queimados, Rio de Janeiro, São João de Meriti, Seropédica</td>
+        <td class="price-cell"><span class="cifra">R$</span>280,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>450,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>700,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>850,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>950,00</td>
+      </tr>
+
+      <tr>
+        <td class="zone-cell"><span class="num">2</span><span class="code">BX1·RO·SR</span></td>
+        <td class="cidades-cell">Guapimirim, Itambi, Magé, Niterói, São Gonçalo</td>
+        <td class="price-cell"><span class="cifra">R$</span>320,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>500,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>800,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>950,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.050,00</td>
+      </tr>
+
+      <tr>
+        <td class="zone-cell"><span class="num">3</span><span class="code">MB·SF·RO1</span></td>
+        <td class="cidades-cell">Eng. Paulo de Frontin, Itaboraí, Mangaratiba, Maricá, Mendes, Paracambi, Rio Bonito, Tanguá</td>
+        <td class="price-cell"><span class="cifra">R$</span>400,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>600,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>900,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.100,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.200,00</td>
+      </tr>
+
+      <tr>
+        <td class="zone-cell"><span class="num">4</span><span class="code">SR1·SF1</span></td>
+        <td class="cidades-cell">Barra do Piraí, Barra Mansa, Volta Redonda, Petrópolis, Pinheiral, Piraí, Valença</td>
+        <td class="price-cell"><span class="cifra">R$</span>600,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>900,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.200,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.300,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.300,00</td>
+      </tr>
+
+      <tr>
+        <td class="zone-cell"><span class="num">5</span><span class="code">RL·SF2·SR2·CV</span></td>
+        <td class="cidades-cell">Angra dos Reis, Araruama, Cabo Frio, Arraial do Cabo, Rio das Ostras, Silva Jardim, Macaé, Paraty, Paraíba do Sul, Porto Real, Quatis, Resende, Rio Claro, Rio das Flores, Saquarema, Sumidouro, Teresópolis, Três Rios</td>
+        <td class="price-cell"><span class="cifra">R$</span>700,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.000,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.400,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.400,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.500,00</td>
+      </tr>
+
+      <tr class="zone6">
+        <td class="zone-cell"><span class="num">6</span><span class="code">SR3·CV1·RL1·SR4</span></td>
+        <td class="cidades-cell">Além Paraíba, Bom Jardim, Carmo, Cordeiro, Duas Barras, Macuco, Nova Friburgo</td>
+        <td class="price-cell"><span class="cifra">R$</span>800,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.100,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.500,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.700,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.900,00</td>
+      </tr>
+
+      <tr>
+        <td class="zone-cell"><span class="num">7</span><span class="code">NF</span></td>
+        <td class="cidades-cell">Aperibé, Cambuci, Cantagalo, Carapebus, Conceição de Macabu, Itaocara, Miracema, Quissamã, São Fidélis, São Francisco de Itabapoana, São José de Ubá, São João da Barra, Santa Maria Madalena, Sto. Antônio de Pádua</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.000,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.300,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.600,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>2.000,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>2.200,00</td>
+      </tr>
+
+      <tr>
+        <td class="zone-cell"><span class="num">8</span><span class="code">NF1</span></td>
+        <td class="cidades-cell">Bom Jesus do Itabapoana, Cardoso Moreira, Italva, Itaperuna, Laje do Muriaé, Natividade, Porciúncula, Trajano de Moraes, Varre-Sai</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.200,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.500,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>1.800,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>2.300,00</td>
+        <td class="price-cell"><span class="cifra">R$</span>2.600,00</td>
+      </tr>
+
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <div class="block">
+      <h3>Pernoite</h3>
+      <div class="row"><span>Capital (zonas 1, 2, 3)</span><span>R$ 200,00</span></div>
+      <div class="row"><span>Viagem (zonas 4 a 8)</span><span>R$ 350,00</span></div>
+    </div>
+    <div class="block">
+      <h3>2 Viagens</h3>
+      <div class="row"><span>Capital (zona 1)</span><span>60% da diária</span></div>
+      <div class="row"><span>Capital (zonas 1, 2, 3)</span><span>incluso</span></div>
+      <div class="row"><span>Viagem (zonas 4 a 8)</span><span>incluso</span></div>
+      <div class="row"><span>Pernoite</span><span>incluso</span></div>
+      <span class="highlight">Ajudantes e pedágios inclusos na diária</span>
+    </div>
+    <div class="block">
+      <h3>Observações</h3>
+      <ul>
+        <li>Primeiro pagamento em 15 dias — fecha-se a primeira semana e o pagamento é realizado na sexta-feira seguinte.</li>
+        <li>Operações de segunda a sábado (sábado não obrigatório).</li>
+        <li>Pedágio incluso na diária.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
