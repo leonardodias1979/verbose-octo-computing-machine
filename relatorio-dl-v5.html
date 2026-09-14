@@ -95,33 +95,50 @@ const fmtKg=n=>new Intl.NumberFormat('pt-BR',{minimumFractionDigits:3,maximumFra
 const fmtMoney=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n);
 function num(v){if(typeof v==='number')return Number.isFinite(v)?v:0;let s=String(v??'').trim().replace(/R\$|kg/gi,'').replace(/\s/g,'');if(!s)return 0;if(s.includes(',')&&s.includes('.'))s=s.lastIndexOf(',')>s.lastIndexOf('.')?s.replace(/\./g,'').replace(',','.'):s.replace(/,/g,'');else if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');return Number(s.replace(/[^0-9.-]/g,''))||0}
 function findField(headers, tests){const n=headers.map(h=>[h,norm(h)]);for(const t of tests){const hit=n.find(([,x])=>t.every(k=>x.includes(k)));if(hit)return hit[0]}return null}
-function decode(buffer){try{return new TextDecoder('utf-8',{fatal:true}).decode(buffer)}catch{return new TextDecoder('windows-1252').decode(buffer)}}
+function decode(buffer){
+ const b=new Uint8Array(buffer);
+ if(b[0]===0xff&&b[1]===0xfe)return new TextDecoder('utf-16le').decode(buffer);
+ if(b[0]===0xfe&&b[1]===0xff)return new TextDecoder('utf-16be').decode(buffer);
+ let s;try{s=new TextDecoder('utf-8',{fatal:true}).decode(buffer)}catch{s=new TextDecoder('windows-1252').decode(buffer)}
+ if((s.match(/\u0000/g)||[]).length>s.length/10){try{return new TextDecoder('utf-16le').decode(buffer)}catch{}}
+ return s;
+}
 function keywordScore(values){const s=norm(values.join(' '));let n=0;['setor','destino','peso','real','calcul','frete','remet'].forEach(k=>{if(s.includes(k))n++});return n}
 function matrixToRows(matrix,name){
  const clean=matrix.filter(r=>Array.isArray(r)&&r.some(v=>String(v??'').trim()));
- if(!clean.length)throw new Error('arquivo vazio');
- let best={score:-1,index:0,skip:1,headers:[]};
+ if(!clean.length)return false;
+ const width=Math.max(...clean.map(r=>r.length));
+ let best={score:-9999,index:0,skip:1,headers:[]};
  for(let i=0;i<Math.min(clean.length,10000);i++){
-  const one=clean[i].map(v=>String(v??'').trim()), next=clean[i+1]||[];
-  const merged=one.map((v,j)=>[v,String(next[j]??'').trim()].filter(Boolean).join(' '));
-  [[one,1],[merged,2]].forEach(([headers,skip])=>{
-   const joined=norm(headers.join(' ')),filled=headers.filter(Boolean).length;
-   let score=keywordScore(headers)*100+filled;
-   if(joined.includes('setor'))score+=250;if(joined.includes('peso'))score+=180;if(joined.includes('frete'))score+=120;if(joined.includes('dest'))score+=80;
-   if(/dl cargas|ctrcs recebidos|periodo de autoriz/.test(joined))score-=500;
-   if(score>best.score)best={score,index:i,skip,headers};
-  });
+  for(let span=1;span<=Math.min(6,clean.length-i);span++){
+   const headers=Array.from({length:width},(_,j)=>{
+    const parts=[];
+    for(let k=0;k<span;k++){const v=String(clean[i+k]?.[j]??'').replace(/\s+/g,' ').trim();if(v&&!parts.includes(v))parts.push(v)}
+    return parts.join(' ');
+   });
+   const joined=norm(headers.join(' ')),filled=headers.filter(Boolean).length,keys=keywordScore(headers);
+   let score=keys*150+filled-span*2;
+   if(joined.includes('setor'))score+=400;
+   if(joined.includes('destino'))score+=160;
+   if(joined.includes('peso'))score+=260;
+   if(joined.includes('frete'))score+=180;
+   if(joined.includes('remet'))score+=120;
+   if(/dl cargas|ctrcs recebidos|periodo de autoriz/.test(joined))score-=700;
+   if(keys>=2&&score>best.score)best={score,index:i,skip:span,headers};
+  }
  }
+ if(best.score<250)return false;
  const used={},headers=best.headers.map((v,i)=>{const x=v||'Coluna '+(i+1);used[x]=(used[x]||0)+1;return used[x]>1?x+' '+used[x]:x});
  const rows=clean.slice(best.index+best.skip).map(r=>Object.fromEntries(headers.map((k,i)=>[k,r[i]??'']))).filter(r=>Object.values(r).some(v=>String(v??'').trim()));
  return load(rows,headers,name);
 }
 function parseDelimited(text,name){
- const lines=text.replace(/^\\uFEFF/,'').split(/\\r?\\n/),candidates=[';','\\t','|',','];let hi=0,del=';',best=-1;
- lines.slice(0,10000).forEach((line,i)=>{if(!line.trim())return;candidates.forEach(d=>{const cells=line.split(d),joined=norm(cells.join(' '));let score=keywordScore(cells)*100+Math.min(cells.length,250);if(joined.includes('setor'))score+=250;if(joined.includes('peso'))score+=180;if(joined.includes('frete'))score+=120;if(/dl cargas|ctrcs recebidos|periodo de autoriz/.test(joined))score-=500;if(cells.length>1&&score>best){best=score;hi=i;del=d}})});
- const out=Papa.parse(lines.slice(hi).join('\\n'),{header:true,delimiter:del,skipEmptyLines:'greedy',transformHeader:h=>h.trim()});
- if(!out.data.length)throw new Error(out.errors[0]?.message||'nenhum registro encontrado');
- return load(out.data,out.meta.fields||[],name);
+ const source=text.replace(/^\uFEFF/,'').replace(/\u0000/g,'');
+ for(const delimiter of [';','\t','|',',']){
+  const out=Papa.parse(source,{header:false,delimiter,skipEmptyLines:'greedy'});
+  if(out.data?.length&&matrixToRows(out.data,name))return true;
+ }
+ return false;
 }
 function htmlMatrices(text){
  const doc=new DOMParser().parseFromString(text,'text/html');
@@ -150,7 +167,7 @@ function parseFile(file){
      for(const m of matrices)if(m.length&&matrixToRows(m,file.name))return;
     }catch(sheetError){if(isZip||/\\.xlsx?$/i.test(file.name))throw sheetError}
    }
-   if(parseDelimited(text.replace(/<[^>]+>/g,' '),file.name))return;
+   if(parseDelimited(text,file.name))return;
    throw new Error('não foi possível localizar a tabela operacional');
   }catch(e){setStatus('Não foi possível ler o arquivo: '+e.message,'err')}
  };reader.onerror=()=>setStatus('Falha ao abrir o arquivo.','err');reader.readAsArrayBuffer(file);
