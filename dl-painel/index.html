@@ -100,41 +100,58 @@ function keywordScore(values){const s=norm(values.join(' '));let n=0;['setor','d
 function matrixToRows(matrix,name){
  const clean=matrix.filter(r=>Array.isArray(r)&&r.some(v=>String(v??'').trim()));
  if(!clean.length)throw new Error('arquivo vazio');
- let hi=0,best=-1;clean.slice(0,5000).forEach((r,i)=>{const score=keywordScore(r)*20+r.filter(v=>String(v??'').trim()).length;if(score>best){best=score;hi=i}});
- const rawHeaders=clean[hi].map((v,i)=>String(v??'').trim()||'Coluna '+(i+1)),used={};
- const headers=rawHeaders.map(x=>{used[x]=(used[x]||0)+1;return used[x]>1?x+' '+used[x]:x});
- const rows=clean.slice(hi+1).map(r=>Object.fromEntries(headers.map((k,i)=>[k,r[i]??'']))).filter(r=>Object.values(r).some(v=>String(v??'').trim()));
- load(rows,headers,name);
+ let best={score:-1,index:0,skip:1,headers:[]};
+ for(let i=0;i<Math.min(clean.length,10000);i++){
+  const one=clean[i].map(v=>String(v??'').trim()), next=clean[i+1]||[];
+  const merged=one.map((v,j)=>[v,String(next[j]??'').trim()].filter(Boolean).join(' '));
+  [[one,1],[merged,2]].forEach(([headers,skip])=>{
+   const joined=norm(headers.join(' ')),filled=headers.filter(Boolean).length;
+   let score=keywordScore(headers)*100+filled;
+   if(joined.includes('setor'))score+=250;if(joined.includes('peso'))score+=180;if(joined.includes('frete'))score+=120;if(joined.includes('dest'))score+=80;
+   if(/dl cargas|ctrcs recebidos|periodo de autoriz/.test(joined))score-=500;
+   if(score>best.score)best={score,index:i,skip,headers};
+  });
+ }
+ const used={},headers=best.headers.map((v,i)=>{const x=v||'Coluna '+(i+1);used[x]=(used[x]||0)+1;return used[x]>1?x+' '+used[x]:x});
+ const rows=clean.slice(best.index+best.skip).map(r=>Object.fromEntries(headers.map((k,i)=>[k,r[i]??'']))).filter(r=>Object.values(r).some(v=>String(v??'').trim()));
+ return load(rows,headers,name);
 }
 function parseDelimited(text,name){
- const lines=text.replace(/^\\uFEFF/,'').split(/\\r?\\n/), candidates=[';','\\t','|',','];let hi=0,del=';',best=-1;
- lines.slice(0,5000).forEach((line,i)=>{if(!line.trim())return;candidates.forEach(d=>{const cells=line.split(d);const score=keywordScore(cells)*30+Math.min(cells.length,200);if(cells.length>1&&score>best){best=score;hi=i;del=d}})});
- const sliced=lines.slice(hi).join('\\n');
- const out=Papa.parse(sliced,{header:true,delimiter:del,skipEmptyLines:'greedy',transformHeader:h=>h.trim()});
+ const lines=text.replace(/^\\uFEFF/,'').split(/\\r?\\n/),candidates=[';','\\t','|',','];let hi=0,del=';',best=-1;
+ lines.slice(0,10000).forEach((line,i)=>{if(!line.trim())return;candidates.forEach(d=>{const cells=line.split(d),joined=norm(cells.join(' '));let score=keywordScore(cells)*100+Math.min(cells.length,250);if(joined.includes('setor'))score+=250;if(joined.includes('peso'))score+=180;if(joined.includes('frete'))score+=120;if(/dl cargas|ctrcs recebidos|periodo de autoriz/.test(joined))score-=500;if(cells.length>1&&score>best){best=score;hi=i;del=d}})});
+ const out=Papa.parse(lines.slice(hi).join('\\n'),{header:true,delimiter:del,skipEmptyLines:'greedy',transformHeader:h=>h.trim()});
  if(!out.data.length)throw new Error(out.errors[0]?.message||'nenhum registro encontrado');
- load(out.data,out.meta.fields||[],name);
+ return load(out.data,out.meta.fields||[],name);
+}
+function htmlMatrices(text){
+ const doc=new DOMParser().parseFromString(text,'text/html');
+ return [...doc.querySelectorAll('table')].map(t=>[...t.rows].map(r=>[...r.cells].map(c=>c.textContent.trim()))).filter(m=>m.length);
+}
+function xmlMatrix(text){
+ const doc=new DOMParser().parseFromString(text,'application/xml'),rows=[...doc.getElementsByTagNameNS('*','Row')];
+ return rows.map(r=>[...r.getElementsByTagNameNS('*','Cell')].map(c=>{const d=c.getElementsByTagNameNS('*','Data')[0];return (d?d.textContent:c.textContent).trim()}));
 }
 function parseFile(file){
  const reader=new FileReader();
  reader.onload=()=>{
   try{
-   const bytes=new Uint8Array(reader.result),isZip=bytes[0]===0x50&&bytes[1]===0x4b;
+   const bytes=new Uint8Array(reader.result),isZip=bytes[0]===0x50&&bytes[1]===0x4b,text=decode(reader.result).replace(/^\\uFEFF/,'');
+   if(/<table[\\s>]/i.test(text)){
+    const mats=htmlMatrices(text).sort((a,b)=>b.length-a.length);
+    for(const m of mats)if(matrixToRows(m,file.name))return;
+   }
+   if(/<(?:\\w+:)?Workbook[\\s>]/i.test(text)){
+    const m=xmlMatrix(text);if(m.length&&matrixToRows(m,file.name))return;
+   }
    if(isZip||/\\.(xlsx?|xls|sswweb)$/i.test(file.name)){
     try{
      const wb=XLSX.read(reader.result,{type:'array',codepage:1252});
-     const matrices=wb.SheetNames.map(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}));
-     const matrix=matrices.sort((a,b)=>{const ac=a.reduce((m,r)=>Math.max(m,r.length),0),bc=b.reduce((m,r)=>Math.max(m,r.length),0);return b.length*bc-a.length*ac})[0];
-     if(matrix&&matrix.length)return matrixToRows(matrix,file.name);
+     const matrices=wb.SheetNames.map(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false})).sort((a,b)=>b.length-a.length);
+     for(const m of matrices)if(m.length&&matrixToRows(m,file.name))return;
     }catch(sheetError){if(isZip||/\\.xlsx?$/i.test(file.name))throw sheetError}
    }
-   const text=decode(reader.result).replace(/^\\uFEFF/,'');
-   if(/<table[\\s>]/i.test(text)){
-    const doc=new DOMParser().parseFromString(text,'text/html'),tables=[...doc.querySelectorAll('table')];
-    if(!tables.length)throw new Error('tabela HTML não encontrada');
-    const table=tables.sort((a,b)=>b.rows.length*(b.rows[0]?.cells.length||0)-a.rows.length*(a.rows[0]?.cells.length||0))[0];
-    return matrixToRows([...table.rows].map(r=>[...r.cells].map(c=>c.textContent.trim())),file.name);
-   }
-   parseDelimited(text,file.name);
+   if(parseDelimited(text.replace(/<[^>]+>/g,' '),file.name))return;
+   throw new Error('não foi possível localizar a tabela operacional');
   }catch(e){setStatus('Não foi possível ler o arquivo: '+e.message,'err')}
  };reader.onerror=()=>setStatus('Falha ao abrir o arquivo.','err');reader.readAsArrayBuffer(file);
 }
@@ -146,7 +163,7 @@ function load(rows,headers,name){
   calc:findField(headers,[['peso','calcul'],['peso','cub'],['peso','taxa']]),
   freight:findField(headers,[['valor','frete'],['vl','frete'],['frete','r'],['frete','total']])
  };
- if(!fields.sector){setStatus('Não encontrei a coluna Setor de Destino. Cabeçalhos identificados: '+headers.slice(0,18).join(' | '),'err');return}
+ if(!fields.sector){return false}
  state.rows=rows.filter(r=>Object.values(r).some(v=>String(v??'').trim()));state.fields=fields;state.hidden.clear();
  state.clients=[...new Set(state.rows.map(r=>String(fields.client?r[fields.client]:'Todos os clientes').trim()||'Sem identificação'))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
  $('#client').innerHTML='<option value="">Todos os clientes</option>'+(fields.client?state.clients.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join(''):'');
