@@ -119,9 +119,13 @@ function parseFile(file){
  reader.onload=()=>{
   try{
    const bytes=new Uint8Array(reader.result),isZip=bytes[0]===0x50&&bytes[1]===0x4b;
-   if(isZip||/\\.xlsx?$/i.test(file.name)){
-    const wb=XLSX.read(reader.result,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]];
-    return matrixToRows(XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false}),file.name);
+   if(isZip||/\\.(xlsx?|xls|sswweb)$/i.test(file.name)){
+    try{
+     const wb=XLSX.read(reader.result,{type:'array',codepage:1252});
+     const matrices=wb.SheetNames.map(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}));
+     const matrix=matrices.sort((a,b)=>{const ac=a.reduce((m,r)=>Math.max(m,r.length),0),bc=b.reduce((m,r)=>Math.max(m,r.length),0);return b.length*bc-a.length*ac})[0];
+     if(matrix&&matrix.length)return matrixToRows(matrix,file.name);
+    }catch(sheetError){if(isZip||/\\.xlsx?$/i.test(file.name))throw sheetError}
    }
    const text=decode(reader.result).replace(/^\\uFEFF/,'');
    if(/<table[\\s>]/i.test(text)){
