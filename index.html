@@ -100,7 +100,7 @@ function keywordScore(values){const s=norm(values.join(' '));let n=0;['setor','d
 function matrixToRows(matrix,name){
  const clean=matrix.filter(r=>Array.isArray(r)&&r.some(v=>String(v??'').trim()));
  if(!clean.length)throw new Error('arquivo vazio');
- let hi=0,best=-1;clean.slice(0,60).forEach((r,i)=>{const score=keywordScore(r)*20+r.filter(v=>String(v??'').trim()).length;if(score>best){best=score;hi=i}});
+ let hi=0,best=-1;clean.slice(0,5000).forEach((r,i)=>{const score=keywordScore(r)*20+r.filter(v=>String(v??'').trim()).length;if(score>best){best=score;hi=i}});
  const rawHeaders=clean[hi].map((v,i)=>String(v??'').trim()||'Coluna '+(i+1)),used={};
  const headers=rawHeaders.map(x=>{used[x]=(used[x]||0)+1;return used[x]>1?x+' '+used[x]:x});
  const rows=clean.slice(hi+1).map(r=>Object.fromEntries(headers.map((k,i)=>[k,r[i]??'']))).filter(r=>Object.values(r).some(v=>String(v??'').trim()));
@@ -108,7 +108,7 @@ function matrixToRows(matrix,name){
 }
 function parseDelimited(text,name){
  const lines=text.replace(/^\\uFEFF/,'').split(/\\r?\\n/), candidates=[';','\\t','|',','];let hi=0,del=';',best=-1;
- lines.slice(0,60).forEach((line,i)=>{if(!line.trim())return;candidates.forEach(d=>{const cells=line.split(d);const score=keywordScore(cells)*30+Math.min(cells.length,200);if(cells.length>1&&score>best){best=score;hi=i;del=d}})});
+ lines.slice(0,5000).forEach((line,i)=>{if(!line.trim())return;candidates.forEach(d=>{const cells=line.split(d);const score=keywordScore(cells)*30+Math.min(cells.length,200);if(cells.length>1&&score>best){best=score;hi=i;del=d}})});
  const sliced=lines.slice(hi).join('\\n');
  const out=Papa.parse(sliced,{header:true,delimiter:del,skipEmptyLines:'greedy',transformHeader:h=>h.trim()});
  if(!out.data.length)throw new Error(out.errors[0]?.message||'nenhum registro encontrado');
