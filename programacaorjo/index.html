@@ -323,7 +323,7 @@ function aggregate(){
   if(!x.details.has(raw))x.details.set(raw,{sector:raw,real:0,calc:0,freight:0,count:0});
   const d=x.details.get(raw);d.real+=real;d.calc+=calc;d.freight+=freight;d.count++;
  });
- return [...map.values()].map(x=>({...x,details:[...x.details.values()].sort((a,b)=>a.sector.localeCompare(b.sector,'pt-BR')),grouped:x.key.startsWith('GRUPO_')})).sort((a,b)=>b.calc-a.calc||a.sector.localeCompare(b.sector,'pt-BR'));
+ return [...map.values()].map(x=>({...x,details:[...x.details.values()].sort((a,b)=>b.calc-a.calc||a.sector.localeCompare(b.sector,'pt-BR')),grouped:x.key.startsWith('GRUPO_')})).sort((a,b)=>b.calc-a.calc||a.sector.localeCompare(b.sector,'pt-BR'));
 }
 function render(){
  const all=aggregate(),visible=all.filter(x=>!state.hidden.has(x.sector));
@@ -356,7 +356,7 @@ function selectedCTRCs(){
   client:f.client?String(r[f.client]??'').trim():'',recipient:f.recipient?String(r[f.recipient]??'').trim():'',
   city:f.city?String(r[f.city]??'').trim():'',sector:String(r[f.sector]??'').trim(),
   real:f.real?num(r[f.real]):0,calc:f.calc?num(r[f.calc]):0,freight:f.freight?num(r[f.freight]):0
- })).sort((a,b)=>a.sector.localeCompare(b.sector,'pt-BR')||a.ctrc.localeCompare(b.ctrc,'pt-BR'));
+ })).sort((a,b)=>b.calc-a.calc||a.sector.localeCompare(b.sector,'pt-BR')||a.ctrc.localeCompare(b.ctrc,'pt-BR'));
 }
 function renderCTRCTable(){
  const body=$('#tbody'),foot=$('#tfoot'),rows=selectedCTRCs();body.closest('table').classList.add('ctrc-table');
