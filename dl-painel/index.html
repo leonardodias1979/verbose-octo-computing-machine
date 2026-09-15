@@ -361,13 +361,14 @@ function deliveryStatus(value){
  const date=parseDeliveryDate(value);if(!date)return '';
  const read=state.reportReadDate?new Date(state.reportReadDate):new Date();read.setHours(0,0,0,0);
  const tomorrow=new Date(read);tomorrow.setDate(tomorrow.getDate()+1);
- if(date.getTime()<tomorrow.getTime())return 'overdue';
+ if(date.getTime()<read.getTime())return 'overdue';
+ if(date.getTime()===read.getTime())return 'today';
  if(date.getTime()===tomorrow.getTime())return 'tomorrow';
  return '';
 }
 function deliveryCell(value){
- const status=deliveryStatus(value),label=status==='overdue'?'Vencida':status==='tomorrow'?'Vence amanhã':'';
- return '<td class="delivery-date '+(status==='overdue'?'delivery-overdue':status==='tomorrow'?'delivery-tomorrow':'')+'">'+esc(value||'—')+(label?'<small>'+label+'</small>':'')+'</td>';
+ const status=deliveryStatus(value),label=status==='overdue'?'Vencida':status==='today'?'Vence hoje':status==='tomorrow'?'Vence amanhã':'';
+ return '<td class="delivery-date '+(status==='overdue'?'delivery-overdue':status==='today'||status==='tomorrow'?'delivery-tomorrow':'')+'">'+esc(value||'—')+(label?'<small>'+label+'</small>':'')+'</td>';
 }
 function selectedCTRCs(){
  const f=state.fields;
