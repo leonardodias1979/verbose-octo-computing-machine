@@ -39,6 +39,8 @@ th{color:#000;background:#f3f4f6}
 .detail-row td{color:#000}
 .sector-list{color:#000}
 @media(min-width:1500px){main{padding-left:22px;padding-right:22px}.grid{grid-template-columns:360px minmax(0,1fr)}}
+
+.multi-select{position:relative}.multi-select summary{list-style:none;border:1px solid #d0d5dd;border-radius:10px;padding:10px 38px 10px 12px;background:#fff;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative}.multi-select summary::-webkit-details-marker{display:none}.multi-select summary:after{content:'▾';position:absolute;right:13px;font-size:14px}.multi-select[open] summary:after{content:'▴'}.multi-select.disabled{opacity:.55;pointer-events:none}.multi-menu{position:absolute;z-index:50;top:calc(100% + 6px);left:0;right:0;min-width:390px;background:#fff;border:1px solid #d0d5dd;border-radius:12px;box-shadow:0 14px 35px #10182826;padding:10px}.multi-actions{display:flex;gap:7px;padding-bottom:8px;border-bottom:1px solid var(--line)}.multi-list{max-height:280px;overflow:auto;padding-top:6px}.multi-item{display:flex;gap:9px;align-items:flex-start;padding:7px;border-radius:7px;cursor:pointer}.multi-item:hover{background:#f2f4f7}.multi-item input{margin-top:3px;accent-color:var(--red)}.multi-item span{color:#000;line-height:1.3}@media(max-width:900px){.multi-menu{min-width:0}}
 </style>
 </head>
 <body>
@@ -55,7 +57,15 @@ th{color:#000;background:#f3f4f6}
 
 <section class="panel filters">
   <div class="field"><label for="client">CLIENTE REMETENTE</label><select id="client" disabled><option>Todos os clientes</option></select></div>
-  <div class="field"><label for="occurrence">COMPLEMENTO DA ÚLTIMA OCORRÊNCIA</label><select id="occurrence" disabled><option>Todos os complementos</option></select></div>
+  <div class="field"><label for="occurrence">COMPLEMENTO DA ÚLTIMA OCORRÊNCIA</label>
+    <details id="occurrence" class="multi-select disabled">
+      <summary id="occurrenceSummary">Importe o relatório</summary>
+      <div class="multi-menu">
+        <div class="multi-actions"><button type="button" class="btn secondary" id="occAll">Marcar todos</button><button type="button" class="btn outline" id="occNone">Desmarcar todos</button></div>
+        <div class="multi-list" id="occurrenceList"></div>
+      </div>
+    </details>
+  </div>
   <div class="actions">
     <button class="btn outline" id="print" disabled>Imprimir</button>
     <button class="btn success" id="export" disabled>Exportar visível</button>
@@ -103,7 +113,7 @@ th{color:#000;background:#f3f4f6}
 </main>
 
 <script>
-const $=s=>document.querySelector(s), state={rows:[],fields:{},hidden:new Set(),clients:[],occurrences:[],charts:[],selectedRegion:null,hiddenCTRCs:new Set()};
+const $=s=>document.querySelector(s), state={rows:[],fields:{},hidden:new Set(),clients:[],occurrences:[],includedOccurrences:new Set(),charts:[],selectedRegion:null,hiddenCTRCs:new Set()};
 Chart.defaults.color='#000';Chart.defaults.font.family='Inter, Segoe UI, Arial, sans-serif';
 const norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const fmtKg=n=>new Intl.NumberFormat('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3}).format(n)+' kg';
@@ -240,8 +250,10 @@ function load(rows,headers,name){
  state.clients=[...new Set(state.rows.map(r=>String(fields.client?r[fields.client]:'Todos os clientes').trim()||'Sem identificação'))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
  $('#client').innerHTML='<option value="">Todos os clientes</option>'+(fields.client?state.clients.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join(''):'');
  state.occurrences=fields.occurrence?[...new Set(state.rows.map(r=>String(r[fields.occurrence]??'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR')):[];
- $('#occurrence').innerHTML='<option value="">Todos os complementos</option><option value="__EMPTY__">Sem complemento</option>'+state.occurrences.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');
- enable(true);$('#occurrence').disabled=!fields.occurrence;const absent=[];if(!fields.real)absent.push('Peso Real');if(!fields.calc)absent.push('Peso Calculado');if(!fields.freight)absent.push('Valor do Frete');
+ const occurrenceOptions=['__EMPTY__',...state.occurrences];state.includedOccurrences=new Set(occurrenceOptions);
+ $('#occurrenceList').innerHTML=occurrenceOptions.map(x=>'<label class="multi-item"><input type="checkbox" class="occ-check" value="'+esc(x)+'" checked><span>'+esc(x==='__EMPTY__'?'Sem complemento':x)+'</span></label>').join('');
+ $('#occurrence').classList.toggle('disabled',!fields.occurrence);updateOccurrenceSummary();
+ enable(true);const absent=[];if(!fields.real)absent.push('Peso Real');if(!fields.calc)absent.push('Peso Calculado');if(!fields.freight)absent.push('Valor do Frete');
  setStatus(name+' carregado: '+state.rows.length+' registros.'+(absent.length?' Sem coluna reconhecida para: '+absent.join(', ')+'. Esses valores serão exibidos como zero.':''),absent.length?'':'ok');render();
  return true;
 }
@@ -258,13 +270,22 @@ function ctrcKey(r){
  const f=state.fields,ctrc=f.ctrc?String(r[f.ctrc]??'').trim():'',cte=f.cte?String(r[f.cte]??'').trim():'';
  return ctrc+'|'+cte;
 }
+function updateOccurrenceSummary(){
+ const total=state.occurrences.length+1,selected=state.includedOccurrences.size;
+ $('#occurrenceSummary').textContent=!state.fields.occurrence?'Coluna não encontrada':selected===total?'Todos os complementos ('+total+')':selected===0?'Nenhum complemento incluído':selected+' de '+total+' incluídos';
+}
+function setAllOccurrences(checked){
+ document.querySelectorAll('.occ-check').forEach(x=>x.checked=checked);
+ state.includedOccurrences=new Set(checked?['__EMPTY__',...state.occurrences]:[]);
+ state.hidden.clear();state.selectedRegion=null;updateOccurrenceSummary();render();
+}
 function matchesGlobalFilters(r){
- const f=state.fields,client=$('#client').value,occ=$('#occurrence').value;
+ const f=state.fields,client=$('#client').value;
  const rowClient=String(f.client?r[f.client]:'Todos os clientes').trim()||'Sem identificação';
  if(client&&rowClient!==client)return false;
- if(occ&&f.occurrence){
-  const rowOccurrence=String(r[f.occurrence]??'').trim();
-  if(occ==='__EMPTY__'){if(rowOccurrence)return false}else if(rowOccurrence!==occ)return false;
+ if(f.occurrence){
+  const rowOccurrence=String(r[f.occurrence]??'').trim()||'__EMPTY__';
+  if(!state.includedOccurrences.has(rowOccurrence))return false;
  }
  return true;
 }
@@ -374,12 +395,14 @@ function renderChart(data){
   {label:'Valor do frete',data:data.map(x=>x.freight),backgroundColor:data.map(x=>!state.selectedRegion||x.sector===state.selectedRegion?'#079455':'#d0d5dd'),borderRadius:6,barPercentage:.58}
  ]},options:freightOptions}));
 }
-function enable(on){['client','occurrence','print','export','checkAll','uncheckAll','hideSelected'].forEach(id=>$('#'+id).disabled=!on)}
+function enable(on){['client','print','export','checkAll','uncheckAll','hideSelected'].forEach(id=>$('#'+id).disabled=!on)}
 function setStatus(msg,type){const s=$('#status');s.textContent=msg;s.className='status '+(type||'')}
 $('#file').addEventListener('change',e=>e.target.files[0]&&parseFile(e.target.files[0]));
 const drop=$('#drop');['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));drop.addEventListener('drop',e=>e.dataTransfer.files[0]&&parseFile(e.dataTransfer.files[0]));
 $('#client').addEventListener('change',()=>{state.hidden.clear();state.selectedRegion=null;render()});
-$('#occurrence').addEventListener('change',e=>{state.hidden.clear();state.selectedRegion=null;e.target.title=e.target.options[e.target.selectedIndex]?.text||'';render()});
+$('#occurrenceList').addEventListener('change',e=>{if(!e.target.classList.contains('occ-check'))return;if(e.target.checked)state.includedOccurrences.add(e.target.value);else state.includedOccurrences.delete(e.target.value);state.hidden.clear();state.selectedRegion=null;updateOccurrenceSummary();render()});
+$('#occAll').onclick=e=>{e.preventDefault();setAllOccurrences(true)};
+$('#occNone').onclick=e=>{e.preventDefault();setAllOccurrences(false)};
 $('#checkAll').onclick=()=>document.querySelectorAll('.sector-check').forEach(x=>x.checked=true);
 $('#uncheckAll').onclick=()=>document.querySelectorAll('.sector-check').forEach(x=>x.checked=false);
 $('#hideSelected').onclick=()=>{const a=[...document.querySelectorAll('.sector-check:checked')];if(!a.length){setStatus('Marque pelo menos um setor para ocultar.','err');return}a.forEach(x=>state.hidden.add(x.value));setStatus(a.length+' setor(es) ocultado(s).','ok');render()};
