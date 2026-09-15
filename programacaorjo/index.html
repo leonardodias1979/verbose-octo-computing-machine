@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Programação RJO • DL Cargas</title>
+<meta name="description" content="Painel de pesos e fretes por setor de destino">
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>\n<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{--red:#b5121b;--red2:#e32631;--ink:#172033;--muted:#667085;--line:#e5e7eb;--bg:#f5f7fb;--card:#fff;--green:#079455}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 Inter,Segoe UI,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+header{background:linear-gradient(120deg,#780b12,#b5121b 55%,#e32631);color:#fff;padding:24px max(20px,calc((100% - 1280px)/2));box-shadow:0 8px 24px #780b1230}
+.brand{display:flex;gap:14px;align-items:center}.logo{width:230px;height:76px;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;padding:7px 12px;box-shadow:0 8px 20px #0002;overflow:hidden}.logo img{display:block;width:100%;height:100%;object-fit:contain}
+h1{font-size:24px;margin:0}header p{margin:3px 0 0;opacity:.86}
+main{max-width:1280px;margin:22px auto;padding:0 18px 40px}.panel,.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 6px 22px #1018280a}
+.panel{padding:18px;margin-bottom:16px}.upload{border:2px dashed #d0d5dd;border-radius:14px;padding:22px;text-align:center;background:#fafafa;transition:.2s}.upload.drag{border-color:var(--red);background:#fff3f3}
+button,.filebtn,select,input{font:inherit}.btn,.filebtn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
+.filebtn,.primary{background:var(--red);color:#fff}.filebtn:hover,.primary:hover{background:#920e15}.secondary{background:#eef0f4;color:#344054}.outline{background:#fff;color:#344054;border:1px solid #d0d5dd}.danger{background:#fff1f2;color:#a20d18;border:1px solid #fecdd3}.success{background:#ecfdf3;color:#067647;border:1px solid #abefc6}
+input[type=file]{display:none}.hint{color:var(--muted);margin:9px 0 0;font-size:12px}.status{margin-top:12px;padding:10px 12px;border-radius:10px;background:#f2f4f7;color:#475467}.status.ok{background:#ecfdf3;color:#067647}.status.err{background:#fff1f3;color:#a20d18}
+.filters{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:12px;align-items:end}.field label{display:block;font-size:12px;font-weight:800;color:#475467;margin-bottom:5px}.field select{width:100%;border:1px solid #d0d5dd;border-radius:10px;padding:10px;background:#fff}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}.card{padding:16px}.card span{display:block;color:var(--muted);font-size:12px;font-weight:700}.card strong{display:block;font-size:23px;margin-top:5px;letter-spacing:-.4px}.card.red strong{color:var(--red)}.card.green strong{color:var(--green)}
+.grid{display:grid;grid-template-columns:330px minmax(0,1fr);gap:16px}.sector-panel{padding:16px;align-self:start;position:sticky;top:12px}.sector-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.sector-title h2,.chart-title h2{font-size:16px;margin:0}.actions{display:flex;gap:7px;flex-wrap:wrap}.actions .btn{padding:8px 10px;font-size:12px}
+.sector-list{max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px;margin:10px 0}.sector-item{display:flex;gap:9px;align-items:center;padding:8px;border-radius:8px}.sector-item:hover{background:#f8fafc}.sector-item input{accent-color:var(--red)}.sector-item label{cursor:pointer;flex:1}.badge{font-size:11px;color:#475467;background:#eef2f6;padding:2px 7px;border-radius:999px}
+.hidden-box{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}.hidden-box h3{font-size:12px;color:#475467;margin:0 0 7px}.pills{display:flex;gap:6px;flex-wrap:wrap}.pill{border:1px solid #fecdd3;background:#fff1f2;color:#9f1239;border-radius:999px;padding:5px 8px;font-size:11px;cursor:pointer}.empty{font-size:12px;color:#98a2b3}
+.content{min-width:0}.chart-card{padding:16px;margin-bottom:16px}.chart-title{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.mini-chart{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}.mini-chart h3{font-size:13px;margin:0 0 8px;color:#475467}.mini-chart canvas{cursor:pointer}.chart-wrap{position:relative;min-height:380px}.chart-note{font-size:12px;color:#667085}
+.table-card{overflow:hidden}.table-head{padding:15px;display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--line)}.table-head h2{margin:0;font-size:16px}.table-wrap{overflow:auto;max-height:560px}table{width:100%;border-collapse:collapse;min-width:760px}th{position:sticky;top:0;background:#f8fafc;color:#475467;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:11px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}td{text-align:right;padding:11px;border-bottom:1px solid #eef0f4;white-space:nowrap}tbody tr:hover{background:#fff8f8}tfoot td{font-weight:900;background:#fff4f4;color:#8e1017;position:sticky;bottom:0}
+.group-row td{background:#fff8f8;font-weight:800}.detail-row td{font-size:12px;color:#667085;background:#fcfcfd}.detail-row td:first-child{padding-left:28px}.no-data{padding:38px;text-align:center;color:#667085}.privacy{font-size:12px;color:#667085;text-align:center;margin:18px}
+@media(max-width:900px){.chart-grid{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.sector-panel{position:static}.filters{grid-template-columns:1fr}.chart-title{align-items:flex-start;flex-direction:column}}
+@media(max-width:520px){h1{font-size:19px}.cards{grid-template-columns:1fr}.card strong{font-size:20px}.actions{width:100%}.actions .btn{flex:1}.logo{width:170px;height:58px}}
+@media print{header,.upload,.filters,.sector-panel,.actions,.privacy{display:none!important}body{background:#fff}main{max-width:none;margin:0;padding:0}.cards{grid-template-columns:repeat(4,1fr)}.card,.panel{box-shadow:none}.grid{display:block}.table-wrap{max-height:none;overflow:visible}th, tfoot td{position:static}}
+</style>
+</head>
+<body>
+<header><div class="brand"><div class="logo"><img alt="DL Cargas &amp; Logística" src="data:image/webp;base64,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"></div><div><h1>Relatório de Pesos e Fretes <small style="font-size:11px;opacity:.75">RJO</small></h1><p>Análise por setor de destino • DL Cargas & Logística</p></div></div></header>
+<main>
+<section class="panel">
+  <div class="upload" id="drop">
+    <strong>Importe o relatório do SSW</strong><br><br>
+    <label class="filebtn">Selecionar arquivo<input id="file" type="file" accept=".csv,.txt,.sswweb,.xlsx,.xls,.html,text/csv,text/plain,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+    <p class="hint">Formatos CSV, TXT, SSWWEB, XLS e XLSX. O arquivo é processado somente neste navegador.</p>
+  </div>
+  <div id="status" class="status">Aguardando o arquivo do relatório.</div>
+</section>
+
+<section class="panel filters">
+  <div class="field"><label for="client">CLIENTE REMETENTE</label><select id="client" disabled><option>Todos os clientes</option></select></div>
+  <div class="actions">
+    <button class="btn outline" id="print" disabled>Imprimir</button>
+    <button class="btn success" id="export" disabled>Exportar visível</button>
+  </div>
+</section>
+
+<section class="cards">
+  <div class="card"><span>SETORES VISÍVEIS</span><strong id="kSectors">0</strong></div>
+  <div class="card red"><span>PESO REAL</span><strong id="kReal">0,000 kg</strong></div>
+  <div class="card red"><span>PESO CALCULADO</span><strong id="kCalc">0,000 kg</strong></div>
+  <div class="card green"><span>VALOR DO FRETE</span><strong id="kFreight">R$ 0,00</strong></div>
+</section>
+
+<div class="grid">
+  <aside class="panel sector-panel">
+    <div class="sector-title"><h2>Setores do relatório</h2><span class="badge" id="sectorCount">0</span></div>
+    <div class="actions">
+      <button class="btn secondary" id="checkAll" disabled>Marcar todos</button>
+      <button class="btn outline" id="uncheckAll" disabled>Desmarcar</button>
+      <button class="btn danger" id="hideSelected" disabled>Ocultar selecionados</button>
+    </div>
+    <div class="sector-list" id="sectorList"><div class="no-data">Importe um arquivo para listar os setores.</div></div>
+    <div class="hidden-box"><h3>SETORES OCULTOS — CLIQUE PARA RESTAURAR</h3><div class="pills" id="hiddenPills"><span class="empty">Nenhum setor oculto.</span></div><button class="btn outline" id="restoreAll" style="width:100%;margin-top:10px" disabled>Restaurar todos</button></div>
+  </aside>
+
+  <div class="content">
+    <section class="card chart-card">
+      <div class="chart-title"><div><h2>Comparativo por setor</h2><span class="chart-note">Valores exibidos diretamente nas barras</span></div></div>
+      <div class="chart-grid">
+        <div class="mini-chart"><h3>Pesos por setor (kg)</h3><div class="chart-wrap" id="weightWrap"><canvas id="weightChart"></canvas></div></div>
+        <div class="mini-chart"><h3>Valor do frete por setor</h3><div class="chart-wrap" id="freightWrap"><canvas id="freightChart"></canvas></div></div>
+      </div>
+    </section>
+    <section class="card table-card">
+      <div class="table-head"><h2>Tabela consolidada</h2><div class="actions"><button class="btn outline" id="clearRegion" style="display:none">Mostrar todas</button><span class="badge" id="rowCount">0 setores</span></div></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Setor de destino</th><th>Peso real (kg)</th><th>Peso calculado (kg)</th><th>Valor do frete</th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="4" class="no-data">Importe o relatório para gerar a análise.</td></tr></tbody>
+        <tfoot id="tfoot"></tfoot>
+      </table></div>
+    </section>
+  </div>
+</div>
+<p class="privacy">Privacidade: nenhuma informação do relatório é enviada ou armazenada em servidor.</p>
+</main>
+
+<script>
+const $=s=>document.querySelector(s), state={rows:[],fields:{},hidden:new Set(),clients:[],charts:[],selectedRegion:null};
+const norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const fmtKg=n=>new Intl.NumberFormat('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3}).format(n)+' kg';
+const fmtMoney=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n);
+function num(v){if(typeof v==='number')return Number.isFinite(v)?v:0;let s=String(v??'').trim().replace(/R\$|kg/gi,'').replace(/\s/g,'');if(!s)return 0;if(s.includes(',')&&s.includes('.'))s=s.lastIndexOf(',')>s.lastIndexOf('.')?s.replace(/\./g,'').replace(',','.'):s.replace(/,/g,'');else if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');return Number(s.replace(/[^0-9.-]/g,''))||0}
+function findField(headers, tests){const n=headers.map(h=>[h,norm(h)]);for(const t of tests){const hit=n.find(([,x])=>t.every(k=>x.includes(k)));if(hit)return hit[0]}return null}
+function decode(buffer){
+ const b=new Uint8Array(buffer);
+ if(b[0]===0xff&&b[1]===0xfe)return new TextDecoder('utf-16le').decode(buffer);
+ if(b[0]===0xfe&&b[1]===0xff)return new TextDecoder('utf-16be').decode(buffer);
+ let s;try{s=new TextDecoder('utf-8',{fatal:true}).decode(buffer)}catch{s=new TextDecoder('windows-1252').decode(buffer)}
+ if((s.match(/\u0000/g)||[]).length>s.length/10){try{return new TextDecoder('utf-16le').decode(buffer)}catch{}}
+ return s;
+}
+function keywordScore(values){const s=norm(values.join(' '));let n=0;['setor','destino','peso','real','calcul','frete','remet'].forEach(k=>{if(s.includes(k))n++});return n}
+function expandEmbeddedMatrix(matrix){
+ const values=matrix.flat().map(v=>String(v??''));
+ const choices=[';','\t','|',','];
+ let delimiter='',best=0;
+ for(const d of choices){
+  const strong=values.filter(s=>s.split(d).length>=6);
+  const score=strong.length*100+strong.reduce((n,s)=>n+s.split(d).length-1,0);
+  if(strong.length>=2&&score>best){best=score;delimiter=d}
+ }
+ if(!delimiter)return matrix;
+ const expanded=[];
+ for(const row of matrix){
+  const nonempty=row.map(v=>String(v??'').trim()).filter(Boolean);
+  const holder=nonempty.sort((a,b)=>b.split(delimiter).length-a.split(delimiter).length)[0]||'';
+  if(holder.split(delimiter).length>=6){
+   const parsed=Papa.parse(holder,{header:false,delimiter,skipEmptyLines:'greedy'}).data;
+   parsed.forEach(r=>expanded.push(r));
+  }else expanded.push(row);
+ }
+ return expanded;
+}
+function matrixToRows(matrix,name){
+ matrix=expandEmbeddedMatrix(matrix);
+ const clean=matrix.filter(r=>Array.isArray(r)&&r.some(v=>String(v??'').trim()));
+ if(!clean.length)return false;
+ const width=Math.max(...clean.map(r=>r.length));
+ let best={score:-9999,index:0,skip:1,headers:[]};
+ for(let i=0;i<Math.min(clean.length,10000);i++){
+  for(let span=1;span<=Math.min(6,clean.length-i);span++){
+   const headers=Array.from({length:width},(_,j)=>{
+    const parts=[];
+    for(let k=0;k<span;k++){const v=String(clean[i+k]?.[j]??'').replace(/\s+/g,' ').trim();if(v&&!parts.includes(v))parts.push(v)}
+    return parts.join(' ');
+   });
+   const joined=norm(headers.join(' ')),filled=headers.filter(Boolean).length,keys=keywordScore(headers);
+   let score=keys*150+filled-span*2;
+   if(joined.includes('setor'))score+=400;
+   if(joined.includes('destino'))score+=160;
+   if(joined.includes('peso'))score+=260;
+   if(joined.includes('frete'))score+=180;
+   if(joined.includes('remet'))score+=120;
+   if(/dl cargas|ctrcs recebidos|periodo de autoriz/.test(joined))score-=700;
+   if(keys>=2&&score>best.score)best={score,index:i,skip:span,headers};
+  }
+ }
+ if(best.score<250)return false;
+ const used={},headers=best.headers.map((v,i)=>{const x=v||'Coluna '+(i+1);used[x]=(used[x]||0)+1;return used[x]>1?x+' '+used[x]:x});
+ const rows=clean.slice(best.index+best.skip).map(r=>Object.fromEntries(headers.map((k,i)=>[k,r[i]??'']))).filter(r=>Object.values(r).some(v=>String(v??'').trim()));
+ return load(rows,headers,name);
+}
+function parseDelimited(text,name){
+ const source=text.replace(/^\uFEFF/,'').replace(/\u0000/g,'');
+ for(const delimiter of [';','\t','|',',']){
+  const out=Papa.parse(source,{header:false,delimiter,skipEmptyLines:'greedy'});
+  if(out.data?.length&&matrixToRows(out.data,name))return true;
+ }
+ return false;
+}
+function htmlMatrices(text){
+ const doc=new DOMParser().parseFromString(text,'text/html');
+ return [...doc.querySelectorAll('table')].map(t=>[...t.rows].map(r=>[...r.cells].map(c=>c.textContent.trim()))).filter(m=>m.length);
+}
+function xmlMatrix(text){
+ const doc=new DOMParser().parseFromString(text,'application/xml'),rows=[...doc.getElementsByTagNameNS('*','Row')];
+ return rows.map(r=>[...r.getElementsByTagNameNS('*','Cell')].map(c=>{const d=c.getElementsByTagNameNS('*','Data')[0];return (d?d.textContent:c.textContent).trim()}));
+}
+function parseSSWRecords(text,name){
+ const source=text.replace(/^\uFEFF/,'').replace(/\u0000/g,'');
+ if(!/(^|\r?\n)0;[^\r\n]*CTRCs RECEBIDOS/i.test(source))return false;
+ const parsed=Papa.parse(source,{header:false,delimiter:';',skipEmptyLines:'greedy'}).data;
+ const hi=parsed.findIndex(r=>String(r[0]??'').trim()==='1'&&norm(r.join(' ')).includes('setor de destino'));
+ if(hi<0)return false;
+ const headers=parsed[hi].slice(1).map(v=>String(v??'').trim());
+ const used={},unique=headers.map((v,i)=>{const x=v||'Coluna '+(i+1);used[x]=(used[x]||0)+1;return used[x]>1?x+' '+used[x]:x});
+ const rows=parsed.slice(hi+1).filter(r=>String(r[0]??'').trim()==='2').map(r=>Object.fromEntries(unique.map((h,i)=>[h,r[i+1]??''])));
+ if(!rows.length)return false;
+ return load(rows,unique,name);
+}
+function parseFile(file){
+ const reader=new FileReader();
+ reader.onload=()=>{
+  try{
+   const bytes=new Uint8Array(reader.result),isZip=bytes[0]===0x50&&bytes[1]===0x4b,text=decode(reader.result).replace(/^\\uFEFF/,'');
+   if(parseSSWRecords(text,file.name))return;
+   if(/<table[\\s>]/i.test(text)){
+    const mats=htmlMatrices(text).sort((a,b)=>b.length-a.length);
+    for(const m of mats)if(matrixToRows(m,file.name))return;
+   }
+   if(/<(?:\\w+:)?Workbook[\\s>]/i.test(text)){
+    const m=xmlMatrix(text);if(m.length&&matrixToRows(m,file.name))return;
+   }
+   if(isZip||/\\.(xlsx?|xls|sswweb)$/i.test(file.name)){
+    try{
+     const wb=XLSX.read(reader.result,{type:'array',codepage:1252});
+     const matrices=wb.SheetNames.map(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false})).sort((a,b)=>b.length-a.length);
+     for(const m of matrices)if(m.length&&matrixToRows(m,file.name))return;
+    }catch(sheetError){if(isZip||/\\.xlsx?$/i.test(file.name))throw sheetError}
+   }
+   if(parseDelimited(text,file.name))return;
+   throw new Error('não foi possível localizar a tabela operacional');
+  }catch(e){setStatus('Não foi possível ler o arquivo: '+e.message,'err')}
+ };reader.onerror=()=>setStatus('Falha ao abrir o arquivo.','err');reader.readAsArrayBuffer(file);
+}
+function load(rows,headers,name){
+ const fields={
+  client:findField(headers,[['cliente','remet'],['remetente'],['remet']]),
+  sector:findField(headers,[['setor','dest'],['setor','entrega'],['setor']]),
+  real:findField(headers,[['peso','real'],['peso','inform'],['peso','kg'],['peso']]),
+  calc:findField(headers,[['peso','calcul'],['peso','cub'],['peso','taxa']]),
+  freight:findField(headers,[['valor','frete'],['vl','frete'],['frete','r'],['frete','total']])
+ };
+ if(!fields.sector){return false}
+ state.rows=rows.filter(r=>Object.values(r).some(v=>String(v??'').trim()));state.fields=fields;state.hidden.clear();
+ state.clients=[...new Set(state.rows.map(r=>String(fields.client?r[fields.client]:'Todos os clientes').trim()||'Sem identificação'))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+ $('#client').innerHTML='<option value="">Todos os clientes</option>'+(fields.client?state.clients.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join(''):'');
+ enable(true);const absent=[];if(!fields.real)absent.push('Peso Real');if(!fields.calc)absent.push('Peso Calculado');if(!fields.freight)absent.push('Valor do Frete');
+ setStatus(name+' carregado: '+state.rows.length+' registros.'+(absent.length?' Sem coluna reconhecida para: '+absent.join(', ')+'. Esses valores serão exibidos como zero.':''),absent.length?'':'ok');render();
+ return true;
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function sectorGroup(raw){
+ const code=String(raw??'').trim().toUpperCase().split(/\s+/)[0];
+ if(['SR','SR1','SR2','SR3','SR4'].includes(code))return {key:'GRUPO_SR',label:'SR — SERRANA'};
+ if(['MB','CV','CV1'].includes(code))return {key:'GRUPO_MB_CV',label:'MB/CV — MANGARATIBA E COSTA VERDE'};
+ if(['MT3','MT4'].includes(code))return {key:'GRUPO_MT34',label:'MT3/MT4 — METROPOLITANA'};
+ if(['RO','RO1'].includes(code))return {key:'GRUPO_RO',label:'RO — REGIÃO OCEÂNICA'};
+ return {key:'SETOR_'+raw,label:raw};
+}
+function aggregate(){
+ const f=state.fields,client=$('#client').value,map=new Map();
+ state.rows.forEach(r=>{
+  const c=String(f.client?r[f.client]:'Todos os clientes').trim()||'Sem identificação';if(client&&c!==client)return;
+  const raw=String(r[f.sector]??'Sem setor').trim()||'Sem setor',g=sectorGroup(raw);
+  if(!map.has(g.key))map.set(g.key,{sector:g.label,key:g.key,real:0,calc:0,freight:0,count:0,details:new Map()});
+  const x=map.get(g.key),real=f.real?num(r[f.real]):0,calc=f.calc?num(r[f.calc]):0,freight=f.freight?num(r[f.freight]):0;
+  x.real+=real;x.calc+=calc;x.freight+=freight;x.count++;
+  if(!x.details.has(raw))x.details.set(raw,{sector:raw,real:0,calc:0,freight:0,count:0});
+  const d=x.details.get(raw);d.real+=real;d.calc+=calc;d.freight+=freight;d.count++;
+ });
+ return [...map.values()].map(x=>({...x,details:[...x.details.values()].sort((a,b)=>a.sector.localeCompare(b.sector,'pt-BR')),grouped:x.key.startsWith('GRUPO_')})).sort((a,b)=>b.calc-a.calc||a.sector.localeCompare(b.sector,'pt-BR'));
+}
+function render(){
+ const all=aggregate(),visible=all.filter(x=>!state.hidden.has(x.sector));
+ if(state.selectedRegion&&!visible.some(x=>x.sector===state.selectedRegion))state.selectedRegion=null;
+ const tableData=state.selectedRegion?visible.filter(x=>x.sector===state.selectedRegion):visible;
+ renderSectors(all);renderTable(tableData);renderChart(visible);
+ const t=visible.reduce((a,x)=>({real:a.real+x.real,calc:a.calc+x.calc,freight:a.freight+x.freight}),{real:0,calc:0,freight:0});
+ $('#kSectors').textContent=visible.length;$('#kReal').textContent=fmtKg(t.real);$('#kCalc').textContent=fmtKg(t.calc);$('#kFreight').textContent=fmtMoney(t.freight);
+ $('#rowCount').textContent=state.selectedRegion?'1 região selecionada':visible.length+' regiões';
+ $('#clearRegion').style.display=state.selectedRegion?'inline-flex':'none';
+}
+function renderSectors(all){
+ $('#sectorCount').textContent=all.length;
+ $('#sectorList').innerHTML=all.filter(x=>!state.hidden.has(x.sector)).map((x,i)=>'<div class="sector-item"><input type="checkbox" class="sector-check" id="s'+i+'" value="'+esc(x.sector)+'"><label for="s'+i+'">'+esc(x.sector)+'</label><span class="badge">'+x.count+'</span></div>').join('')||'<div class="no-data">Nenhum setor visível.</div>';
+ const hidden=all.filter(x=>state.hidden.has(x.sector));$('#hiddenPills').innerHTML=hidden.length?hidden.map(x=>'<button class="pill" data-restore="'+esc(x.sector)+'">+ '+esc(x.sector)+'</button>').join(''):'<span class="empty">Nenhum setor oculto.</span>';$('#restoreAll').disabled=!hidden.length;
+}
+function renderTable(data){
+ const body=$('#tbody'),foot=$('#tfoot');if(!data.length){body.innerHTML='<tr><td colspan="4" class="no-data">Nenhum setor para exibir.</td></tr>';foot.innerHTML='';return}
+ body.innerHTML=data.map(x=>{
+  const group='<tr class="'+(x.grouped?'group-row':'')+'"><td>'+esc(x.sector)+'</td><td>'+fmtKg(x.real)+'</td><td>'+fmtKg(x.calc)+'</td><td>'+fmtMoney(x.freight)+'</td></tr>';
+  const detail=x.grouped?x.details.map(d=>'<tr class="detail-row"><td>↳ '+esc(d.sector)+'</td><td>'+fmtKg(d.real)+'</td><td>'+fmtKg(d.calc)+'</td><td>'+fmtMoney(d.freight)+'</td></tr>').join(''):'';
+  return group+detail;
+ }).join('');
+ const t=data.reduce((a,x)=>({real:a.real+x.real,calc:a.calc+x.calc,freight:a.freight+x.freight}),{real:0,calc:0,freight:0});
+ foot.innerHTML='<tr><td>Total Geral</td><td>'+fmtKg(t.real)+'</td><td>'+fmtKg(t.calc)+'</td><td>'+fmtMoney(t.freight)+'</td></tr>';
+}
+function selectChartRegion(data,elements){
+ if(!elements.length)return;
+ const region=data[elements[0].index]?.sector;if(!region)return;
+ state.selectedRegion=state.selectedRegion===region?null:region;
+ render();
+}
+function renderChart(data){
+ state.charts.forEach(ch=>ch.destroy());state.charts=[];
+ const height=Math.max(390,data.length*54+90);
+ $('#weightWrap').style.height=height+'px';$('#freightWrap').style.height=height+'px';
+ const labels=data.map(x=>x.sector),common={
+  responsive:true,maintainAspectRatio:false,indexAxis:'y',animation:{duration:450},
+  interaction:{mode:'nearest',intersect:true},
+  layout:{padding:{right:72}},
+  plugins:{legend:{position:'top',labels:{usePointStyle:true,boxWidth:9}},tooltip:{enabled:false}},
+  scales:{y:{grid:{display:false},ticks:{font:{size:11}}},x:{beginAtZero:true,grid:{color:'#eef0f4'}}}
+ };
+ const weightOptions=JSON.parse(JSON.stringify(common));
+ weightOptions.layout.padding.right=82;
+ weightOptions.plugins.datalabels={display:true,color:'#344054',anchor:'end',align:'right',clamp:true,offset:3,font:{size:10,weight:'700'},formatter:v=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0}).format(v)+' kg'};
+ weightOptions.scales.x.ticks={callback:v=>new Intl.NumberFormat('pt-BR').format(v)};
+ weightOptions.onClick=(event,elements)=>selectChartRegion(data,elements);
+ const freightOptions=JSON.parse(JSON.stringify(common));
+ freightOptions.onClick=(event,elements)=>selectChartRegion(data,elements);
+ freightOptions.layout.padding.right=88;
+ freightOptions.plugins.legend.display=false;
+ freightOptions.plugins.datalabels={display:true,color:'#067647',anchor:'end',align:'right',clamp:true,offset:3,font:{size:10,weight:'700'},formatter:v=>fmtMoney(v)};
+ freightOptions.scales.x.ticks={callback:v=>fmtMoney(Number(v))};
+ const plugins=typeof ChartDataLabels!=='undefined'?[ChartDataLabels]:[];
+ state.charts.push(new Chart($('#weightChart'),{type:'bar',plugins,data:{labels,datasets:[
+  {label:'Peso real',data:data.map(x=>x.real),backgroundColor:data.map(x=>!state.selectedRegion||x.sector===state.selectedRegion?'#b5121b':'#d0d5dd'),borderRadius:6,barPercentage:.72},
+  {label:'Peso calculado',data:data.map(x=>x.calc),backgroundColor:data.map(x=>!state.selectedRegion||x.sector===state.selectedRegion?'#f06a72':'#e4e7ec'),borderRadius:6,barPercentage:.72}
+ ]},options:weightOptions}));
+ state.charts.push(new Chart($('#freightChart'),{type:'bar',plugins,data:{labels,datasets:[
+  {label:'Valor do frete',data:data.map(x=>x.freight),backgroundColor:data.map(x=>!state.selectedRegion||x.sector===state.selectedRegion?'#079455':'#d0d5dd'),borderRadius:6,barPercentage:.58}
+ ]},options:freightOptions}));
+}
+function enable(on){['client','print','export','checkAll','uncheckAll','hideSelected'].forEach(id=>$('#'+id).disabled=!on)}
+function setStatus(msg,type){const s=$('#status');s.textContent=msg;s.className='status '+(type||'')}
+$('#file').addEventListener('change',e=>e.target.files[0]&&parseFile(e.target.files[0]));
+const drop=$('#drop');['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));drop.addEventListener('drop',e=>e.dataTransfer.files[0]&&parseFile(e.dataTransfer.files[0]));
+$('#client').addEventListener('change',()=>{state.hidden.clear();state.selectedRegion=null;render()});
+$('#checkAll').onclick=()=>document.querySelectorAll('.sector-check').forEach(x=>x.checked=true);
+$('#uncheckAll').onclick=()=>document.querySelectorAll('.sector-check').forEach(x=>x.checked=false);
+$('#hideSelected').onclick=()=>{const a=[...document.querySelectorAll('.sector-check:checked')];if(!a.length){setStatus('Marque pelo menos um setor para ocultar.','err');return}a.forEach(x=>state.hidden.add(x.value));setStatus(a.length+' setor(es) ocultado(s).','ok');render()};
+$('#hiddenPills').onclick=e=>{const b=e.target.closest('[data-restore]');if(b){state.hidden.delete(b.dataset.restore);render()}};
+$('#restoreAll').onclick=()=>{state.hidden.clear();render()};$('#clearRegion').onclick=()=>{state.selectedRegion=null;render()};$('#print').onclick=()=>window.print();
+$('#export').onclick=()=>{const data=aggregate().filter(x=>!state.hidden.has(x.sector));const rows=[['Setor de Destino','Peso Real em Kg','Peso Calculado em Kg','Valor do Frete'],...data.map(x=>[x.sector,x.real.toFixed(3).replace('.',','),x.calc.toFixed(3).replace('.',','),x.freight.toFixed(2).replace('.',',')])];const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='relatorio_setores_visiveis.csv';a.click();URL.revokeObjectURL(a.href)};
+</script>
+</body>
+</html>
