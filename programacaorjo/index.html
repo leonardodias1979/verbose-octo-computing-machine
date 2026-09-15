@@ -24,7 +24,7 @@ input[type=file]{display:none}.hint{color:var(--muted);margin:9px 0 0;font-size:
 .sector-list{max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px;margin:10px 0}.sector-item{display:flex;gap:9px;align-items:center;padding:8px;border-radius:8px}.sector-item:hover{background:#f8fafc}.sector-item input{accent-color:var(--red)}.sector-item label{cursor:pointer;flex:1}.badge{font-size:11px;color:#475467;background:#eef2f6;padding:2px 7px;border-radius:999px}
 .hidden-box{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}.hidden-box h3{font-size:12px;color:#475467;margin:0 0 7px}.pills{display:flex;gap:6px;flex-wrap:wrap}.pill{border:1px solid #fecdd3;background:#fff1f2;color:#9f1239;border-radius:999px;padding:5px 8px;font-size:11px;cursor:pointer}.empty{font-size:12px;color:#98a2b3}
 .content{min-width:0}.chart-card{padding:16px;margin-bottom:16px}.chart-title{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.mini-chart{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}.mini-chart h3{font-size:13px;margin:0 0 8px;color:#475467}.mini-chart canvas{cursor:pointer}.chart-wrap{position:relative;min-height:380px}.chart-note{font-size:12px;color:#667085}
-.table-card{overflow:hidden}.table-head{padding:15px;display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--line)}.table-head h2{margin:0;font-size:16px}.table-wrap{overflow:auto;max-height:560px}table{width:100%;border-collapse:collapse;min-width:760px}th{position:sticky;top:0;background:#f8fafc;color:#475467;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:11px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}td{text-align:right;padding:11px;border-bottom:1px solid #eef0f4;white-space:nowrap}tbody tr:hover{background:#fff8f8}tfoot td{font-weight:900;background:#fff4f4;color:#8e1017;position:sticky;bottom:0}
+.table-card{overflow:hidden}.table-head{padding:15px;display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--line)}.table-head h2{margin:0;font-size:16px}.table-wrap{overflow:auto;max-height:560px}table{width:100%;border-collapse:collapse;min-width:760px}th{position:sticky;top:0;background:#f8fafc;color:#475467;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:11px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}td{text-align:right;padding:11px;border-bottom:1px solid #eef0f4;white-space:nowrap}tbody tr:hover{background:#fff8f8}.ctrc-table{min-width:1500px}.ctrc-table th:nth-child(-n+6),.ctrc-table td:nth-child(-n+6){text-align:left}.ctrc-table td{font-size:12px}tfoot td{font-weight:900;background:#fff4f4;color:#8e1017;position:sticky;bottom:0}
 .group-row td{background:#fff8f8;font-weight:800}.detail-row td{font-size:12px;color:#667085;background:#fcfcfd}.detail-row td:first-child{padding-left:28px}.no-data{padding:38px;text-align:center;color:#667085}.privacy{font-size:12px;color:#667085;text-align:center;margin:18px}
 @media(max-width:900px){.chart-grid{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.sector-panel{position:static}.filters{grid-template-columns:1fr}.chart-title{align-items:flex-start;flex-direction:column}}
 @media(max-width:520px){h1{font-size:19px}.cards{grid-template-columns:1fr}.card strong{font-size:20px}.actions{width:100%}.actions .btn{flex:1}.logo{width:170px;height:58px}}
@@ -81,7 +81,7 @@ input[type=file]{display:none}.hint{color:var(--muted);margin:9px 0 0;font-size:
     <section class="card table-card">
       <div class="table-head"><h2>Tabela consolidada</h2><div class="actions"><button class="btn outline" id="clearRegion" style="display:none">Mostrar todas</button><span class="badge" id="rowCount">0 setores</span></div></div>
       <div class="table-wrap"><table>
-        <thead><tr><th>Setor de destino</th><th>Peso real (kg)</th><th>Peso calculado (kg)</th><th>Valor do frete</th></tr></thead>
+        <thead><tr id="theadRow"><th>Setor de destino</th><th>Peso real (kg)</th><th>Peso calculado (kg)</th><th>Valor do frete</th></tr></thead>
         <tbody id="tbody"><tr><td colspan="4" class="no-data">Importe o relatório para gerar a análise.</td></tr></tbody>
         <tfoot id="tfoot"></tfoot>
       </table></div>
@@ -216,7 +216,11 @@ function load(rows,headers,name){
   sector:findField(headers,[['setor','dest'],['setor','entrega'],['setor']]),
   real:findField(headers,[['peso','real'],['peso','inform'],['peso','kg'],['peso']]),
   calc:findField(headers,[['peso','calcul'],['peso','cub'],['peso','taxa']]),
-  freight:findField(headers,[['valor','frete'],['vl','frete'],['frete','r'],['frete','total']])
+  freight:findField(headers,[['valor','frete'],['vl','frete'],['frete','r'],['frete','total']]),
+  ctrc:findField(headers,[['serie','numero','ctrc'],['numero','ctrc'],['ctrc']]),
+  cte:findField(headers,[['serie','numero','ct e'],['numero','ct e']]),
+  recipient:findField(headers,[['cliente','destinatario'],['destinatario']]),
+  city:findField(headers,[['cidade','destinatario'],['cidade','destino']])
  };
  if(!fields.sector){return false}
  state.rows=rows.filter(r=>Object.values(r).some(v=>String(v??'').trim()));state.fields=fields;state.hidden.clear();
@@ -255,7 +259,7 @@ function render(){
  renderSectors(all);renderTable(tableData);renderChart(visible);
  const t=visible.reduce((a,x)=>({real:a.real+x.real,calc:a.calc+x.calc,freight:a.freight+x.freight}),{real:0,calc:0,freight:0});
  $('#kSectors').textContent=visible.length;$('#kReal').textContent=fmtKg(t.real);$('#kCalc').textContent=fmtKg(t.calc);$('#kFreight').textContent=fmtMoney(t.freight);
- $('#rowCount').textContent=state.selectedRegion?'1 região selecionada':visible.length+' regiões';
+ $('#rowCount').textContent=state.selectedRegion?selectedCTRCs().length+' CTRCs':visible.length+' regiões';
  $('#clearRegion').style.display=state.selectedRegion?'inline-flex':'none';
 }
 function renderSectors(all){
@@ -263,7 +267,31 @@ function renderSectors(all){
  $('#sectorList').innerHTML=all.filter(x=>!state.hidden.has(x.sector)).map((x,i)=>'<div class="sector-item"><input type="checkbox" class="sector-check" id="s'+i+'" value="'+esc(x.sector)+'"><label for="s'+i+'">'+esc(x.sector)+'</label><span class="badge">'+x.count+'</span></div>').join('')||'<div class="no-data">Nenhum setor visível.</div>';
  const hidden=all.filter(x=>state.hidden.has(x.sector));$('#hiddenPills').innerHTML=hidden.length?hidden.map(x=>'<button class="pill" data-restore="'+esc(x.sector)+'">+ '+esc(x.sector)+'</button>').join(''):'<span class="empty">Nenhum setor oculto.</span>';$('#restoreAll').disabled=!hidden.length;
 }
+function selectedCTRCs(){
+ const f=state.fields,client=$('#client').value;
+ return state.rows.filter(r=>{
+  const c=String(f.client?r[f.client]:'Todos os clientes').trim()||'Sem identificação';if(client&&c!==client)return false;
+  const raw=String(r[f.sector]??'Sem setor').trim()||'Sem setor';
+  return sectorGroup(raw).label===state.selectedRegion;
+ }).map(r=>({
+  ctrc:f.ctrc?String(r[f.ctrc]??'').trim():'',cte:f.cte?String(r[f.cte]??'').trim():'',
+  client:f.client?String(r[f.client]??'').trim():'',recipient:f.recipient?String(r[f.recipient]??'').trim():'',
+  city:f.city?String(r[f.city]??'').trim():'',sector:String(r[f.sector]??'').trim(),
+  real:f.real?num(r[f.real]):0,calc:f.calc?num(r[f.calc]):0,freight:f.freight?num(r[f.freight]):0
+ })).sort((a,b)=>a.sector.localeCompare(b.sector,'pt-BR')||a.ctrc.localeCompare(b.ctrc,'pt-BR'));
+}
+function renderCTRCTable(){
+ const body=$('#tbody'),foot=$('#tfoot'),rows=selectedCTRCs();body.closest('table').classList.add('ctrc-table');
+ $('#theadRow').innerHTML='<th>CTRC</th><th>CT-e</th><th>Cliente remetente</th><th>Destinatário</th><th>Cidade</th><th>Setor</th><th>Peso real</th><th>Peso calculado</th><th>Valor do frete</th>';
+ if(!rows.length){body.innerHTML='<tr><td colspan="9" class="no-data">Nenhum CTRC encontrado para esta região.</td></tr>';foot.innerHTML='';return}
+ body.innerHTML=rows.map(x=>'<tr><td>'+esc(x.ctrc||'—')+'</td><td>'+esc(x.cte||'—')+'</td><td>'+esc(x.client||'—')+'</td><td>'+esc(x.recipient||'—')+'</td><td>'+esc(x.city||'—')+'</td><td>'+esc(x.sector||'—')+'</td><td>'+fmtKg(x.real)+'</td><td>'+fmtKg(x.calc)+'</td><td>'+fmtMoney(x.freight)+'</td></tr>').join('');
+ const t=rows.reduce((a,x)=>({real:a.real+x.real,calc:a.calc+x.calc,freight:a.freight+x.freight}),{real:0,calc:0,freight:0});
+ foot.innerHTML='<tr><td colspan="6">Total dos '+rows.length+' CTRCs</td><td>'+fmtKg(t.real)+'</td><td>'+fmtKg(t.calc)+'</td><td>'+fmtMoney(t.freight)+'</td></tr>';
+}
 function renderTable(data){
+ if(state.selectedRegion){renderCTRCTable();return}
+ $('#tbody').closest('table').classList.remove('ctrc-table');
+ $('#theadRow').innerHTML='<th>Setor de destino</th><th>Peso real (kg)</th><th>Peso calculado (kg)</th><th>Valor do frete</th>';
  const body=$('#tbody'),foot=$('#tfoot');if(!data.length){body.innerHTML='<tr><td colspan="4" class="no-data">Nenhum setor para exibir.</td></tr>';foot.innerHTML='';return}
  body.innerHTML=data.map(x=>{
   const group='<tr class="'+(x.grouped?'group-row':'')+'"><td>'+esc(x.sector)+'</td><td>'+fmtKg(x.real)+'</td><td>'+fmtKg(x.calc)+'</td><td>'+fmtMoney(x.freight)+'</td></tr>';
