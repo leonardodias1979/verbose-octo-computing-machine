@@ -63,6 +63,12 @@ th{font-size:13px}
 td{font-size:14px}
 .detail-row td,.ctrc-table td{font-size:13px}
 .empty{font-size:13px}
+.delivery-date{font-weight:700;white-space:nowrap}
+.delivery-date small{display:block;font-size:11px;font-weight:800;margin-top:2px}
+.delivery-overdue{background:#fee2e2!important;color:#991b1b!important}
+.delivery-overdue small{color:#991b1b!important}
+.delivery-tomorrow{background:#fef3c7!important;color:#92400e!important}
+.delivery-tomorrow small{color:#92400e!important}
 </style>
 </head>
 <body>
@@ -135,7 +141,7 @@ td{font-size:14px}
 </main>
 
 <script>
-const $=s=>document.querySelector(s), state={rows:[],fields:{},hidden:new Set(),clients:[],occurrences:[],includedOccurrences:new Set(),charts:[],selectedRegion:null,hiddenCTRCs:new Set()};
+const $=s=>document.querySelector(s), state={rows:[],fields:{},hidden:new Set(),clients:[],occurrences:[],includedOccurrences:new Set(),charts:[],selectedRegion:null,hiddenCTRCs:new Set(),reportReadDate:null};
 Chart.defaults.color='#000';Chart.defaults.font.family='Inter, Segoe UI, Arial, sans-serif';Chart.defaults.font.size=13;
 const norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const fmtKg=n=>new Intl.NumberFormat('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3}).format(n)+' kg';
@@ -265,17 +271,18 @@ function load(rows,headers,name){
   cte:findField(headers,[['serie','numero','ct e'],['numero','ct e']]),
   recipient:findField(headers,[['cliente','destinatario'],['destinatario']]),
   city:findField(headers,[['cidade','destinatario'],['cidade','destino']]),
-  occurrence:findField(headers,[['complemento','ultima','ocorrencia'],['complemento','ocorrencia']])
+  occurrence:findField(headers,[['complemento','ultima','ocorrencia'],['complemento','ocorrencia']]),
+  deliveryForecast:findField(headers,[['previsao','entrega'],['previs','entrega']])
  };
  if(!fields.sector){return false}
- state.rows=rows.filter(r=>Object.values(r).some(v=>String(v??'').trim()));state.fields=fields;state.hidden.clear();state.hiddenCTRCs.clear();
+ state.rows=rows.filter(r=>Object.values(r).some(v=>String(v??'').trim()));state.fields=fields;state.hidden.clear();state.hiddenCTRCs.clear();state.reportReadDate=new Date();
  state.clients=[...new Set(state.rows.map(r=>String(fields.client?r[fields.client]:'Todos os clientes').trim()||'Sem identificação'))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
  $('#client').innerHTML='<option value="">Todos os clientes</option>'+(fields.client?state.clients.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join(''):'');
  state.occurrences=fields.occurrence?[...new Set(state.rows.map(r=>String(r[fields.occurrence]??'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR')):[];
  const occurrenceOptions=['__EMPTY__',...state.occurrences];state.includedOccurrences=new Set(occurrenceOptions);
  $('#occurrenceList').innerHTML=occurrenceOptions.map(x=>'<label class="multi-item"><input type="checkbox" class="occ-check" value="'+esc(x)+'" checked><span>'+esc(x==='__EMPTY__'?'Sem complemento':x)+'</span></label>').join('');
  $('#occurrence').classList.toggle('disabled',!fields.occurrence);updateOccurrenceSummary();
- enable(true);const absent=[];if(!fields.real)absent.push('Peso Real');if(!fields.calc)absent.push('Peso Calculado');if(!fields.freight)absent.push('Valor do Frete');
+ enable(true);const absent=[];if(!fields.real)absent.push('Peso Real');if(!fields.calc)absent.push('Peso Calculado');if(!fields.freight)absent.push('Valor do Frete');if(!fields.deliveryForecast)absent.push('Previsão de Entrega');
  setStatus(name+' carregado: '+state.rows.length+' registros.'+(absent.length?' Sem coluna reconhecida para: '+absent.join(', ')+'. Esses valores serão exibidos como zero.':''),absent.length?'':'ok');render();
  return true;
 }
@@ -344,6 +351,24 @@ function renderSectors(all){
  $('#sectorList').innerHTML=all.filter(x=>!state.hidden.has(x.sector)).map((x,i)=>'<div class="sector-item"><input type="checkbox" class="sector-check" id="s'+i+'" value="'+esc(x.sector)+'"><label for="s'+i+'">'+esc(x.sector)+'</label><span class="badge">'+x.count+'</span></div>').join('')||'<div class="no-data">Nenhum setor visível.</div>';
  const hidden=all.filter(x=>state.hidden.has(x.sector));$('#hiddenPills').innerHTML=hidden.length?hidden.map(x=>'<button class="pill" data-restore="'+esc(x.sector)+'">+ '+esc(x.sector)+'</button>').join(''):'<span class="empty">Nenhum setor oculto.</span>';$('#restoreAll').disabled=!hidden.length;
 }
+function parseDeliveryDate(value){
+ const m=String(value??'').trim().match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/);
+ if(!m)return null;
+ const day=Number(m[1]),month=Number(m[2]),year=Number(m[3])+(Number(m[3])<100?2000:0),date=new Date(year,month-1,day);
+ return date.getFullYear()===year&&date.getMonth()===month-1&&date.getDate()===day?date:null;
+}
+function deliveryStatus(value){
+ const date=parseDeliveryDate(value);if(!date)return '';
+ const read=state.reportReadDate?new Date(state.reportReadDate):new Date();read.setHours(0,0,0,0);
+ const tomorrow=new Date(read);tomorrow.setDate(tomorrow.getDate()+1);
+ if(date.getTime()<tomorrow.getTime())return 'overdue';
+ if(date.getTime()===tomorrow.getTime())return 'tomorrow';
+ return '';
+}
+function deliveryCell(value){
+ const status=deliveryStatus(value),label=status==='overdue'?'Vencida':status==='tomorrow'?'Vence amanhã':'';
+ return '<td class="delivery-date '+(status==='overdue'?'delivery-overdue':status==='tomorrow'?'delivery-tomorrow':'')+'">'+esc(value||'—')+(label?'<small>'+label+'</small>':'')+'</td>';
+}
 function selectedCTRCs(){
  const f=state.fields;
  return state.rows.filter(r=>{
@@ -354,17 +379,17 @@ function selectedCTRCs(){
  }).map(r=>({
   key:ctrcKey(r),ctrc:f.ctrc?String(r[f.ctrc]??'').trim():'',cte:f.cte?String(r[f.cte]??'').trim():'',
   client:f.client?String(r[f.client]??'').trim():'',recipient:f.recipient?String(r[f.recipient]??'').trim():'',
-  city:f.city?String(r[f.city]??'').trim():'',sector:String(r[f.sector]??'').trim(),
+  city:f.city?String(r[f.city]??'').trim():'',sector:String(r[f.sector]??'').trim(),forecast:f.deliveryForecast?String(r[f.deliveryForecast]??'').trim():'',
   real:f.real?num(r[f.real]):0,calc:f.calc?num(r[f.calc]):0,freight:f.freight?num(r[f.freight]):0
  })).sort((a,b)=>b.calc-a.calc||a.sector.localeCompare(b.sector,'pt-BR')||a.ctrc.localeCompare(b.ctrc,'pt-BR'));
 }
 function renderCTRCTable(){
  const body=$('#tbody'),foot=$('#tfoot'),rows=selectedCTRCs();body.closest('table').classList.add('ctrc-table');
- $('#theadRow').innerHTML='<th><input type="checkbox" id="toggleCTRCs" title="Marcar todos"></th><th>CTRC</th><th>CT-e</th><th>Cliente remetente</th><th>Destinatário</th><th>Cidade</th><th>Setor</th><th>Peso real</th><th>Peso calculado</th><th>Valor do frete</th>';
- if(!rows.length){body.innerHTML='<tr><td colspan="10" class="no-data">Nenhum CTRC visível para esta região.</td></tr>';foot.innerHTML='';return}
- body.innerHTML=rows.map(x=>'<tr><td><input type="checkbox" class="ctrc-check" value="'+esc(x.key)+'" aria-label="Selecionar CTRC '+esc(x.ctrc)+'"></td><td>'+esc(x.ctrc||'—')+'</td><td>'+esc(x.cte||'—')+'</td><td>'+esc(x.client||'—')+'</td><td>'+esc(x.recipient||'—')+'</td><td>'+esc(x.city||'—')+'</td><td>'+esc(x.sector||'—')+'</td><td>'+fmtKg(x.real)+'</td><td>'+fmtKg(x.calc)+'</td><td>'+fmtMoney(x.freight)+'</td></tr>').join('');
+ $('#theadRow').innerHTML='<th><input type="checkbox" id="toggleCTRCs" title="Marcar todos"></th><th>CTRC</th><th>CT-e</th><th>Cliente remetente</th><th>Destinatário</th><th>Cidade</th><th>Setor</th><th>Previsão de entrega</th><th>Peso real</th><th>Peso calculado</th><th>Valor do frete</th>';
+ if(!rows.length){body.innerHTML='<tr><td colspan="11" class="no-data">Nenhum CTRC visível para esta região.</td></tr>';foot.innerHTML='';return}
+ body.innerHTML=rows.map(x=>'<tr><td><input type="checkbox" class="ctrc-check" value="'+esc(x.key)+'" aria-label="Selecionar CTRC '+esc(x.ctrc)+'"></td><td>'+esc(x.ctrc||'—')+'</td><td>'+esc(x.cte||'—')+'</td><td>'+esc(x.client||'—')+'</td><td>'+esc(x.recipient||'—')+'</td><td>'+esc(x.city||'—')+'</td><td>'+esc(x.sector||'—')+'</td>'+deliveryCell(x.forecast)+'<td>'+fmtKg(x.real)+'</td><td>'+fmtKg(x.calc)+'</td><td>'+fmtMoney(x.freight)+'</td></tr>').join('');
  const t=rows.reduce((a,x)=>({real:a.real+x.real,calc:a.calc+x.calc,freight:a.freight+x.freight}),{real:0,calc:0,freight:0});
- foot.innerHTML='<tr><td colspan="7">Total dos '+rows.length+' CTRCs</td><td>'+fmtKg(t.real)+'</td><td>'+fmtKg(t.calc)+'</td><td>'+fmtMoney(t.freight)+'</td></tr>';
+ foot.innerHTML='<tr><td colspan="8">Total dos '+rows.length+' CTRCs</td><td>'+fmtKg(t.real)+'</td><td>'+fmtKg(t.calc)+'</td><td>'+fmtMoney(t.freight)+'</td></tr>';
  $('#toggleCTRCs').onchange=e=>document.querySelectorAll('.ctrc-check').forEach(x=>x.checked=e.target.checked);
 }
 function renderTable(data){
