@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DL Cargas • Relatório por Setor v7</title>
+<title>DL Cargas • Relatório por Setor v8</title>
 <meta name="description" content="Painel de pesos e fretes por setor de destino">
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -32,7 +32,7 @@ input[type=file]{display:none}.hint{color:var(--muted);margin:9px 0 0;font-size:
 </style>
 </head>
 <body>
-<header><div class="brand"><div class="logo">DL</div><div><h1>Relatório de Pesos e Fretes <small style="font-size:11px;opacity:.75">v7</small></h1><p>Análise por setor de destino • DL Cargas & Logística</p></div></div></header>
+<header><div class="brand"><div class="logo">DL</div><div><h1>Relatório de Pesos e Fretes <small style="font-size:11px;opacity:.75">v8</small></h1><p>Análise por setor de destino • DL Cargas & Logística</p></div></div></header>
 <main>
 <section class="panel">
   <div class="upload" id="drop">
@@ -170,11 +170,24 @@ function xmlMatrix(text){
  const doc=new DOMParser().parseFromString(text,'application/xml'),rows=[...doc.getElementsByTagNameNS('*','Row')];
  return rows.map(r=>[...r.getElementsByTagNameNS('*','Cell')].map(c=>{const d=c.getElementsByTagNameNS('*','Data')[0];return (d?d.textContent:c.textContent).trim()}));
 }
+function parseSSWRecords(text,name){
+ const source=text.replace(/^\uFEFF/,'').replace(/\u0000/g,'');
+ if(!/(^|\r?\n)0;[^\r\n]*CTRCs RECEBIDOS/i.test(source))return false;
+ const parsed=Papa.parse(source,{header:false,delimiter:';',skipEmptyLines:'greedy'}).data;
+ const hi=parsed.findIndex(r=>String(r[0]??'').trim()==='1'&&norm(r.join(' ')).includes('setor de destino'));
+ if(hi<0)return false;
+ const headers=parsed[hi].slice(1).map(v=>String(v??'').trim());
+ const used={},unique=headers.map((v,i)=>{const x=v||'Coluna '+(i+1);used[x]=(used[x]||0)+1;return used[x]>1?x+' '+used[x]:x});
+ const rows=parsed.slice(hi+1).filter(r=>String(r[0]??'').trim()==='2').map(r=>Object.fromEntries(unique.map((h,i)=>[h,r[i+1]??''])));
+ if(!rows.length)return false;
+ return load(rows,unique,name);
+}
 function parseFile(file){
  const reader=new FileReader();
  reader.onload=()=>{
   try{
    const bytes=new Uint8Array(reader.result),isZip=bytes[0]===0x50&&bytes[1]===0x4b,text=decode(reader.result).replace(/^\\uFEFF/,'');
+   if(parseSSWRecords(text,file.name))return;
    if(/<table[\\s>]/i.test(text)){
     const mats=htmlMatrices(text).sort((a,b)=>b.length-a.length);
     for(const m of mats)if(matrixToRows(m,file.name))return;
@@ -208,6 +221,7 @@ function load(rows,headers,name){
  $('#client').innerHTML='<option value="">Todos os clientes</option>'+(fields.client?state.clients.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join(''):'');
  enable(true);const absent=[];if(!fields.real)absent.push('Peso Real');if(!fields.calc)absent.push('Peso Calculado');if(!fields.freight)absent.push('Valor do Frete');
  setStatus(name+' carregado: '+state.rows.length+' registros.'+(absent.length?' Sem coluna reconhecida para: '+absent.join(', ')+'. Esses valores serão exibidos como zero.':''),absent.length?'':'ok');render();
+ return true;
 }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function aggregate(){
