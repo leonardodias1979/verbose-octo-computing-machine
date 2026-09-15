@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DL Cargas • Relatório por Setor v9</title>
+<title>DL Cargas • Relatório por Setor v10</title>
 <meta name="description" content="Painel de pesos e fretes por setor de destino">
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>\n<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--red:#b5121b;--red2:#e32631;--ink:#172033;--muted:#667085;--line:#e5e7eb;--bg:#f5f7fb;--card:#fff;--green:#079455}
 *{box-sizing:border-box}body{margin:0;font:14px/1.45 Inter,Segoe UI,Arial,sans-serif;color:var(--ink);background:var(--bg)}
@@ -23,16 +23,16 @@ input[type=file]{display:none}.hint{color:var(--muted);margin:9px 0 0;font-size:
 .grid{display:grid;grid-template-columns:330px minmax(0,1fr);gap:16px}.sector-panel{padding:16px;align-self:start;position:sticky;top:12px}.sector-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.sector-title h2,.chart-title h2{font-size:16px;margin:0}.actions{display:flex;gap:7px;flex-wrap:wrap}.actions .btn{padding:8px 10px;font-size:12px}
 .sector-list{max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px;margin:10px 0}.sector-item{display:flex;gap:9px;align-items:center;padding:8px;border-radius:8px}.sector-item:hover{background:#f8fafc}.sector-item input{accent-color:var(--red)}.sector-item label{cursor:pointer;flex:1}.badge{font-size:11px;color:#475467;background:#eef2f6;padding:2px 7px;border-radius:999px}
 .hidden-box{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}.hidden-box h3{font-size:12px;color:#475467;margin:0 0 7px}.pills{display:flex;gap:6px;flex-wrap:wrap}.pill{border:1px solid #fecdd3;background:#fff1f2;color:#9f1239;border-radius:999px;padding:5px 8px;font-size:11px;cursor:pointer}.empty{font-size:12px;color:#98a2b3}
-.content{min-width:0}.chart-card{padding:16px;margin-bottom:16px}.chart-title{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}.chart-wrap{position:relative;min-height:330px;height:clamp(330px,45vw,560px)}
+.content{min-width:0}.chart-card{padding:16px;margin-bottom:16px}.chart-title{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.mini-chart{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}.mini-chart h3{font-size:13px;margin:0 0 8px;color:#475467}.chart-wrap{position:relative;min-height:380px}.chart-note{font-size:12px;color:#667085}
 .table-card{overflow:hidden}.table-head{padding:15px;display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--line)}.table-head h2{margin:0;font-size:16px}.table-wrap{overflow:auto;max-height:560px}table{width:100%;border-collapse:collapse;min-width:760px}th{position:sticky;top:0;background:#f8fafc;color:#475467;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:11px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}td{text-align:right;padding:11px;border-bottom:1px solid #eef0f4;white-space:nowrap}tbody tr:hover{background:#fff8f8}tfoot td{font-weight:900;background:#fff4f4;color:#8e1017;position:sticky;bottom:0}
 .group-row td{background:#fff8f8;font-weight:800}.detail-row td{font-size:12px;color:#667085;background:#fcfcfd}.detail-row td:first-child{padding-left:28px}.no-data{padding:38px;text-align:center;color:#667085}.privacy{font-size:12px;color:#667085;text-align:center;margin:18px}
-@media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.sector-panel{position:static}.filters{grid-template-columns:1fr}.chart-title{align-items:flex-start;flex-direction:column}}
+@media(max-width:900px){.chart-grid{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.sector-panel{position:static}.filters{grid-template-columns:1fr}.chart-title{align-items:flex-start;flex-direction:column}}
 @media(max-width:520px){h1{font-size:19px}.cards{grid-template-columns:1fr}.card strong{font-size:20px}.actions{width:100%}.actions .btn{flex:1}.logo{width:42px;height:42px}}
 @media print{header,.upload,.filters,.sector-panel,.actions,.privacy{display:none!important}body{background:#fff}main{max-width:none;margin:0;padding:0}.cards{grid-template-columns:repeat(4,1fr)}.card,.panel{box-shadow:none}.grid{display:block}.table-wrap{max-height:none;overflow:visible}th, tfoot td{position:static}}
 </style>
 </head>
 <body>
-<header><div class="brand"><div class="logo">DL</div><div><h1>Relatório de Pesos e Fretes <small style="font-size:11px;opacity:.75">v9</small></h1><p>Análise por setor de destino • DL Cargas & Logística</p></div></div></header>
+<header><div class="brand"><div class="logo">DL</div><div><h1>Relatório de Pesos e Fretes <small style="font-size:11px;opacity:.75">v10</small></h1><p>Análise por setor de destino • DL Cargas & Logística</p></div></div></header>
 <main>
 <section class="panel">
   <div class="upload" id="drop">
@@ -72,8 +72,11 @@ input[type=file]{display:none}.hint{color:var(--muted);margin:9px 0 0;font-size:
 
   <div class="content">
     <section class="card chart-card">
-      <div class="chart-title"><h2>Comparativo por setor</h2><div class="field"><select id="metric"><option value="both">Peso + frete</option><option value="weight">Somente pesos</option><option value="freight">Somente frete</option></select></div></div>
-      <div class="chart-wrap"><canvas id="chart"></canvas></div>
+      <div class="chart-title"><div><h2>Comparativo por setor</h2><span class="chart-note">Valores exibidos diretamente nas barras</span></div></div>
+      <div class="chart-grid">
+        <div class="mini-chart"><h3>Pesos por setor (kg)</h3><div class="chart-wrap" id="weightWrap"><canvas id="weightChart"></canvas></div></div>
+        <div class="mini-chart"><h3>Valor do frete por setor</h3><div class="chart-wrap" id="freightWrap"><canvas id="freightChart"></canvas></div></div>
+      </div>
     </section>
     <section class="card table-card">
       <div class="table-head"><h2>Tabela consolidada</h2><span class="badge" id="rowCount">0 setores</span></div>
@@ -89,7 +92,7 @@ input[type=file]{display:none}.hint{color:var(--muted);margin:9px 0 0;font-size:
 </main>
 
 <script>
-const $=s=>document.querySelector(s), state={rows:[],fields:{},hidden:new Set(),clients:[],chart:null};
+const $=s=>document.querySelector(s), state={rows:[],fields:{},hidden:new Set(),clients:[],charts:[]};
 const norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const fmtKg=n=>new Intl.NumberFormat('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3}).format(n)+' kg';
 const fmtMoney=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n);
@@ -266,30 +269,39 @@ function renderTable(data){
  foot.innerHTML='<tr><td>Total Geral</td><td>'+fmtKg(t.real)+'</td><td>'+fmtKg(t.calc)+'</td><td>'+fmtMoney(t.freight)+'</td></tr>';
 }
 function renderChart(data){
- if(state.chart)state.chart.destroy();
- const mode=$('#metric').value,ctx=$('#chart'),labels=data.map(x=>x.sector);
- let datasets,scales;
- if(mode==='both'){
-  datasets=[
-   {type:'bar',label:'Peso real',data:data.map(x=>x.real),backgroundColor:'#b5121b',borderRadius:6,xAxisID:'xWeight'},
-   {type:'bar',label:'Peso calculado',data:data.map(x=>x.calc),backgroundColor:'#f06a72',borderRadius:6,xAxisID:'xWeight'},
-   {type:'line',label:'Valor do frete',data:data.map(x=>x.freight),borderColor:'#079455',backgroundColor:'#079455',pointBackgroundColor:'#fff',pointBorderWidth:3,pointRadius:4,tension:.3,xAxisID:'xFreight'}
-  ];
-  scales={y:{grid:{display:false}},xWeight:{position:'bottom',grid:{color:'#eef0f4'},title:{display:true,text:'Peso (kg)'},ticks:{callback:v=>new Intl.NumberFormat('pt-BR').format(v)}},xFreight:{position:'top',grid:{drawOnChartArea:false},title:{display:true,text:'Valor do frete (R$)'},ticks:{callback:v=>fmtMoney(Number(v))}}};
- }else if(mode==='freight'){
-  datasets=[{label:'Valor do frete',data:data.map(x=>x.freight),backgroundColor:'#079455',borderRadius:7}];
-  scales={y:{grid:{display:false}},x:{grid:{color:'#eef0f4'},ticks:{callback:v=>fmtMoney(Number(v))}}};
- }else{
-  datasets=[{label:'Peso real',data:data.map(x=>x.real),backgroundColor:'#b5121b',borderRadius:7},{label:'Peso calculado',data:data.map(x=>x.calc),backgroundColor:'#f06a72',borderRadius:7}];
-  scales={y:{grid:{display:false}},x:{grid:{color:'#eef0f4'},ticks:{callback:v=>new Intl.NumberFormat('pt-BR').format(v)}}};
- }
- state.chart=new Chart(ctx,{type:'bar',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.dataset.label.includes('frete')?fmtMoney(c.raw):fmtKg(c.raw))}}},scales}});
+ state.charts.forEach(ch=>ch.destroy());state.charts=[];
+ const height=Math.max(390,data.length*54+90);
+ $('#weightWrap').style.height=height+'px';$('#freightWrap').style.height=height+'px';
+ const labels=data.map(x=>x.sector),common={
+  responsive:true,maintainAspectRatio:false,indexAxis:'y',animation:{duration:450},
+  interaction:{mode:'nearest',intersect:true},
+  layout:{padding:{right:72}},
+  plugins:{legend:{position:'top',labels:{usePointStyle:true,boxWidth:9}},tooltip:{enabled:false}},
+  scales:{y:{grid:{display:false},ticks:{font:{size:11}}},x:{beginAtZero:true,grid:{color:'#eef0f4'}}}
+ };
+ const weightOptions=JSON.parse(JSON.stringify(common));
+ weightOptions.layout.padding.right=82;
+ weightOptions.plugins.datalabels={display:true,color:'#344054',anchor:'end',align:'right',clamp:true,offset:3,font:{size:10,weight:'700'},formatter:v=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0}).format(v)+' kg'};
+ weightOptions.scales.x.ticks={callback:v=>new Intl.NumberFormat('pt-BR').format(v)};
+ const freightOptions=JSON.parse(JSON.stringify(common));
+ freightOptions.layout.padding.right=88;
+ freightOptions.plugins.legend.display=false;
+ freightOptions.plugins.datalabels={display:true,color:'#067647',anchor:'end',align:'right',clamp:true,offset:3,font:{size:10,weight:'700'},formatter:v=>fmtMoney(v)};
+ freightOptions.scales.x.ticks={callback:v=>fmtMoney(Number(v))};
+ const plugins=typeof ChartDataLabels!=='undefined'?[ChartDataLabels]:[];
+ state.charts.push(new Chart($('#weightChart'),{type:'bar',plugins,data:{labels,datasets:[
+  {label:'Peso real',data:data.map(x=>x.real),backgroundColor:'#b5121b',borderRadius:6,barPercentage:.72},
+  {label:'Peso calculado',data:data.map(x=>x.calc),backgroundColor:'#f06a72',borderRadius:6,barPercentage:.72}
+ ]},options:weightOptions}));
+ state.charts.push(new Chart($('#freightChart'),{type:'bar',plugins,data:{labels,datasets:[
+  {label:'Valor do frete',data:data.map(x=>x.freight),backgroundColor:'#079455',borderRadius:6,barPercentage:.58}
+ ]},options:freightOptions}));
 }
 function enable(on){['client','print','export','checkAll','uncheckAll','hideSelected'].forEach(id=>$('#'+id).disabled=!on)}
 function setStatus(msg,type){const s=$('#status');s.textContent=msg;s.className='status '+(type||'')}
 $('#file').addEventListener('change',e=>e.target.files[0]&&parseFile(e.target.files[0]));
 const drop=$('#drop');['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));drop.addEventListener('drop',e=>e.dataTransfer.files[0]&&parseFile(e.dataTransfer.files[0]));
-$('#client').addEventListener('change',()=>{state.hidden.clear();render()});$('#metric').addEventListener('change',render);
+$('#client').addEventListener('change',()=>{state.hidden.clear();render()});
 $('#checkAll').onclick=()=>document.querySelectorAll('.sector-check').forEach(x=>x.checked=true);
 $('#uncheckAll').onclick=()=>document.querySelectorAll('.sector-check').forEach(x=>x.checked=false);
 $('#hideSelected').onclick=()=>{const a=[...document.querySelectorAll('.sector-check:checked')];if(!a.length){setStatus('Marque pelo menos um setor para ocultar.','err');return}a.forEach(x=>state.hidden.add(x.value));setStatus(a.length+' setor(es) ocultado(s).','ok');render()};
