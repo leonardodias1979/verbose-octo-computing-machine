@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DL Cargas • Relatório por Setor</title>
+<title>DL Cargas • Relatório por Setor v7</title>
 <meta name="description" content="Painel de pesos e fretes por setor de destino">
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -32,7 +32,7 @@ input[type=file]{display:none}.hint{color:var(--muted);margin:9px 0 0;font-size:
 </style>
 </head>
 <body>
-<header><div class="brand"><div class="logo">DL</div><div><h1>Relatório de Pesos e Fretes</h1><p>Análise por setor de destino • DL Cargas & Logística</p></div></div></header>
+<header><div class="brand"><div class="logo">DL</div><div><h1>Relatório de Pesos e Fretes <small style="font-size:11px;opacity:.75">v7</small></h1><p>Análise por setor de destino • DL Cargas & Logística</p></div></div></header>
 <main>
 <section class="panel">
   <div class="upload" id="drop">
@@ -104,7 +104,29 @@ function decode(buffer){
  return s;
 }
 function keywordScore(values){const s=norm(values.join(' '));let n=0;['setor','destino','peso','real','calcul','frete','remet'].forEach(k=>{if(s.includes(k))n++});return n}
+function expandEmbeddedMatrix(matrix){
+ const values=matrix.flat().map(v=>String(v??''));
+ const choices=[';','\t','|',','];
+ let delimiter='',best=0;
+ for(const d of choices){
+  const strong=values.filter(s=>s.split(d).length>=6);
+  const score=strong.length*100+strong.reduce((n,s)=>n+s.split(d).length-1,0);
+  if(strong.length>=2&&score>best){best=score;delimiter=d}
+ }
+ if(!delimiter)return matrix;
+ const expanded=[];
+ for(const row of matrix){
+  const nonempty=row.map(v=>String(v??'').trim()).filter(Boolean);
+  const holder=nonempty.sort((a,b)=>b.split(delimiter).length-a.split(delimiter).length)[0]||'';
+  if(holder.split(delimiter).length>=6){
+   const parsed=Papa.parse(holder,{header:false,delimiter,skipEmptyLines:'greedy'}).data;
+   parsed.forEach(r=>expanded.push(r));
+  }else expanded.push(row);
+ }
+ return expanded;
+}
 function matrixToRows(matrix,name){
+ matrix=expandEmbeddedMatrix(matrix);
  const clean=matrix.filter(r=>Array.isArray(r)&&r.some(v=>String(v??'').trim()));
  if(!clean.length)return false;
  const width=Math.max(...clean.map(r=>r.length));
