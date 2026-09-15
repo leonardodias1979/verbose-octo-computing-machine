@@ -29,6 +29,16 @@ input[type=file]{display:none}.hint{color:var(--muted);margin:9px 0 0;font-size:
 @media(max-width:900px){.chart-grid{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.sector-panel{position:static}.filters{grid-template-columns:1fr}.chart-title{align-items:flex-start;flex-direction:column}}
 @media(max-width:520px){h1{font-size:19px}.cards{grid-template-columns:1fr}.card strong{font-size:20px}.actions{width:100%}.actions .btn{flex:1}.logo{width:170px;height:58px}}
 @media print{header,.upload,.filters,.sector-panel,.actions,.privacy{display:none!important}body{background:#fff}main{max-width:none;margin:0;padding:0}.cards{grid-template-columns:repeat(4,1fr)}.card,.panel{box-shadow:none}.grid{display:block}.table-wrap{max-height:none;overflow:visible}th, tfoot td{position:static}}
+
+/* Ajuste de largura e contraste */
+header{padding-left:24px;padding-right:24px}
+main{max-width:none;width:100%;margin:18px 0 0;padding:0 14px 40px}
+body,.panel,.card,.upload,.field label,.field select,.card span,.sector-item label,.chart-note,.mini-chart h3,.badge,.table-head,th,td,.detail-row td,.empty{color:#000}
+.hint,.privacy,.status{color:#202020}
+th{color:#000;background:#f3f4f6}
+.detail-row td{color:#000}
+.sector-list{color:#000}
+@media(min-width:1500px){main{padding-left:22px;padding-right:22px}.grid{grid-template-columns:360px minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -93,6 +103,7 @@ input[type=file]{display:none}.hint{color:var(--muted);margin:9px 0 0;font-size:
 
 <script>
 const $=s=>document.querySelector(s), state={rows:[],fields:{},hidden:new Set(),clients:[],charts:[],selectedRegion:null,hiddenCTRCs:new Set()};
+Chart.defaults.color='#000';Chart.defaults.font.family='Inter, Segoe UI, Arial, sans-serif';
 const norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const fmtKg=n=>new Intl.NumberFormat('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3}).format(n)+' kg';
 const fmtMoney=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n);
