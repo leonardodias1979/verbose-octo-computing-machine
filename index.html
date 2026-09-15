@@ -41,6 +41,28 @@ th{color:#000;background:#f3f4f6}
 @media(min-width:1500px){main{padding-left:22px;padding-right:22px}.grid{grid-template-columns:360px minmax(0,1fr)}}
 
 .multi-select{position:relative}.multi-select summary{list-style:none;border:1px solid #d0d5dd;border-radius:10px;padding:10px 38px 10px 12px;background:#fff;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative}.multi-select summary::-webkit-details-marker{display:none}.multi-select summary:after{content:'▾';position:absolute;right:13px;font-size:14px}.multi-select[open] summary:after{content:'▴'}.multi-select.disabled{opacity:.55;pointer-events:none}.multi-menu{position:absolute;z-index:50;top:calc(100% + 6px);left:0;right:0;min-width:390px;background:#fff;border:1px solid #d0d5dd;border-radius:12px;box-shadow:0 14px 35px #10182826;padding:10px}.multi-actions{display:flex;gap:7px;padding-bottom:8px;border-bottom:1px solid var(--line)}.multi-list{max-height:280px;overflow:auto;padding-top:6px}.multi-item{display:flex;gap:9px;align-items:flex-start;padding:7px;border-radius:7px;cursor:pointer}.multi-item:hover{background:#f2f4f7}.multi-item input{margin-top:3px;accent-color:var(--red)}.multi-item span{color:#000;line-height:1.3}@media(max-width:900px){.multi-menu{min-width:0}}
+
+/* Tipografia ampliada */
+body{font-size:16px;line-height:1.5}
+h1{font-size:28px}
+header p{font-size:14px}
+.btn,.filebtn{font-size:14px}
+.hint,.privacy{font-size:13px}
+.status{font-size:14px}
+.field label,.card span{font-size:13px}
+.field select,.multi-select summary{font-size:15px}
+.card strong{font-size:27px}
+.sector-title h2,.chart-title h2,.table-head h2{font-size:18px}
+.actions .btn{font-size:13px}
+.sector-item label{font-size:15px}
+.badge{font-size:12px}
+.multi-item span{font-size:14px}
+.mini-chart h3{font-size:15px}
+.chart-note{font-size:13px}
+th{font-size:13px}
+td{font-size:14px}
+.detail-row td,.ctrc-table td{font-size:13px}
+.empty{font-size:13px}
 </style>
 </head>
 <body>
@@ -114,7 +136,7 @@ th{color:#000;background:#f3f4f6}
 
 <script>
 const $=s=>document.querySelector(s), state={rows:[],fields:{},hidden:new Set(),clients:[],occurrences:[],includedOccurrences:new Set(),charts:[],selectedRegion:null,hiddenCTRCs:new Set()};
-Chart.defaults.color='#000';Chart.defaults.font.family='Inter, Segoe UI, Arial, sans-serif';
+Chart.defaults.color='#000';Chart.defaults.font.family='Inter, Segoe UI, Arial, sans-serif';Chart.defaults.font.size=13;
 const norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const fmtKg=n=>new Intl.NumberFormat('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3}).format(n)+' kg';
 const fmtMoney=n=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n);
@@ -373,18 +395,18 @@ function renderChart(data){
   interaction:{mode:'nearest',intersect:true},
   layout:{padding:{right:72}},
   plugins:{legend:{position:'top',labels:{usePointStyle:true,boxWidth:9}},tooltip:{enabled:false}},
-  scales:{y:{grid:{display:false},ticks:{font:{size:11}}},x:{beginAtZero:true,grid:{color:'#eef0f4'}}}
+  scales:{y:{grid:{display:false},ticks:{font:{size:13}}},x:{beginAtZero:true,grid:{color:'#eef0f4'}}}
  };
  const weightOptions=JSON.parse(JSON.stringify(common));
  weightOptions.layout.padding.right=82;
- weightOptions.plugins.datalabels={display:true,color:'#344054',anchor:'end',align:'right',clamp:true,offset:3,font:{size:10,weight:'700'},formatter:v=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0}).format(v)+' kg'};
+ weightOptions.plugins.datalabels={display:true,color:'#344054',anchor:'end',align:'right',clamp:true,offset:3,font:{size:12,weight:'700'},formatter:v=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0}).format(v)+' kg'};
  weightOptions.scales.x.ticks={callback:v=>new Intl.NumberFormat('pt-BR').format(v)};
  weightOptions.onClick=(event,elements)=>selectChartRegion(data,elements);
  const freightOptions=JSON.parse(JSON.stringify(common));
  freightOptions.onClick=(event,elements)=>selectChartRegion(data,elements);
  freightOptions.layout.padding.right=88;
  freightOptions.plugins.legend.display=false;
- freightOptions.plugins.datalabels={display:true,color:'#067647',anchor:'end',align:'right',clamp:true,offset:3,font:{size:10,weight:'700'},formatter:v=>fmtMoney(v)};
+ freightOptions.plugins.datalabels={display:true,color:'#067647',anchor:'end',align:'right',clamp:true,offset:3,font:{size:12,weight:'700'},formatter:v=>fmtMoney(v)};
  freightOptions.scales.x.ticks={callback:v=>fmtMoney(Number(v))};
  const plugins=typeof ChartDataLabels!=='undefined'?[ChartDataLabels]:[];
  state.charts.push(new Chart($('#weightChart'),{type:'bar',plugins,data:{labels,datasets:[
