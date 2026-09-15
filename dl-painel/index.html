@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DL Cargas • Relatório por Setor v8</title>
+<title>DL Cargas • Relatório por Setor v9</title>
 <meta name="description" content="Painel de pesos e fretes por setor de destino">
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -25,14 +25,14 @@ input[type=file]{display:none}.hint{color:var(--muted);margin:9px 0 0;font-size:
 .hidden-box{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}.hidden-box h3{font-size:12px;color:#475467;margin:0 0 7px}.pills{display:flex;gap:6px;flex-wrap:wrap}.pill{border:1px solid #fecdd3;background:#fff1f2;color:#9f1239;border-radius:999px;padding:5px 8px;font-size:11px;cursor:pointer}.empty{font-size:12px;color:#98a2b3}
 .content{min-width:0}.chart-card{padding:16px;margin-bottom:16px}.chart-title{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}.chart-wrap{position:relative;min-height:330px;height:clamp(330px,45vw,560px)}
 .table-card{overflow:hidden}.table-head{padding:15px;display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--line)}.table-head h2{margin:0;font-size:16px}.table-wrap{overflow:auto;max-height:560px}table{width:100%;border-collapse:collapse;min-width:760px}th{position:sticky;top:0;background:#f8fafc;color:#475467;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:11px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}td{text-align:right;padding:11px;border-bottom:1px solid #eef0f4;white-space:nowrap}tbody tr:hover{background:#fff8f8}tfoot td{font-weight:900;background:#fff4f4;color:#8e1017;position:sticky;bottom:0}
-.no-data{padding:38px;text-align:center;color:#667085}.privacy{font-size:12px;color:#667085;text-align:center;margin:18px}
+.group-row td{background:#fff8f8;font-weight:800}.detail-row td{font-size:12px;color:#667085;background:#fcfcfd}.detail-row td:first-child{padding-left:28px}.no-data{padding:38px;text-align:center;color:#667085}.privacy{font-size:12px;color:#667085;text-align:center;margin:18px}
 @media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.sector-panel{position:static}.filters{grid-template-columns:1fr}.chart-title{align-items:flex-start;flex-direction:column}}
 @media(max-width:520px){h1{font-size:19px}.cards{grid-template-columns:1fr}.card strong{font-size:20px}.actions{width:100%}.actions .btn{flex:1}.logo{width:42px;height:42px}}
 @media print{header,.upload,.filters,.sector-panel,.actions,.privacy{display:none!important}body{background:#fff}main{max-width:none;margin:0;padding:0}.cards{grid-template-columns:repeat(4,1fr)}.card,.panel{box-shadow:none}.grid{display:block}.table-wrap{max-height:none;overflow:visible}th, tfoot td{position:static}}
 </style>
 </head>
 <body>
-<header><div class="brand"><div class="logo">DL</div><div><h1>Relatório de Pesos e Fretes <small style="font-size:11px;opacity:.75">v8</small></h1><p>Análise por setor de destino • DL Cargas & Logística</p></div></div></header>
+<header><div class="brand"><div class="logo">DL</div><div><h1>Relatório de Pesos e Fretes <small style="font-size:11px;opacity:.75">v9</small></h1><p>Análise por setor de destino • DL Cargas & Logística</p></div></div></header>
 <main>
 <section class="panel">
   <div class="upload" id="drop">
@@ -72,7 +72,7 @@ input[type=file]{display:none}.hint{color:var(--muted);margin:9px 0 0;font-size:
 
   <div class="content">
     <section class="card chart-card">
-      <div class="chart-title"><h2>Comparativo por setor</h2><div class="field"><select id="metric"><option value="weight">Pesos em kg</option><option value="freight">Valor do frete</option></select></div></div>
+      <div class="chart-title"><h2>Comparativo por setor</h2><div class="field"><select id="metric"><option value="both">Peso + frete</option><option value="weight">Somente pesos</option><option value="freight">Somente frete</option></select></div></div>
       <div class="chart-wrap"><canvas id="chart"></canvas></div>
     </section>
     <section class="card table-card">
@@ -224,10 +224,26 @@ function load(rows,headers,name){
  return true;
 }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function sectorGroup(raw){
+ const code=String(raw??'').trim().toUpperCase().split(/\s+/)[0];
+ if(['SR','SR1','SR2','SR3','SR4'].includes(code))return {key:'GRUPO_SR',label:'SR — SERRANA'};
+ if(['MB','CV','CV1'].includes(code))return {key:'GRUPO_MB_CV',label:'MB/CV — MANGARATIBA E COSTA VERDE'};
+ if(['MT3','MT4'].includes(code))return {key:'GRUPO_MT34',label:'MT3/MT4 — METROPOLITANA'};
+ if(['RO','RO1'].includes(code))return {key:'GRUPO_RO',label:'RO — REGIÃO OCEÂNICA'};
+ return {key:'SETOR_'+raw,label:raw};
+}
 function aggregate(){
- const f=state.fields, client=$('#client').value, map=new Map();
- state.rows.forEach(r=>{const c=String(f.client?r[f.client]:'Todos os clientes').trim()||'Sem identificação';if(client&&c!==client)return;const sector=String(r[f.sector]??'Sem setor').trim()||'Sem setor';if(!map.has(sector))map.set(sector,{sector,real:0,calc:0,freight:0,count:0});const x=map.get(sector);x.real+=f.real?num(r[f.real]):0;x.calc+=f.calc?num(r[f.calc]):0;x.freight+=f.freight?num(r[f.freight]):0;x.count++});
- return [...map.values()].sort((a,b)=>b.calc-a.calc||a.sector.localeCompare(b.sector,'pt-BR'));
+ const f=state.fields,client=$('#client').value,map=new Map();
+ state.rows.forEach(r=>{
+  const c=String(f.client?r[f.client]:'Todos os clientes').trim()||'Sem identificação';if(client&&c!==client)return;
+  const raw=String(r[f.sector]??'Sem setor').trim()||'Sem setor',g=sectorGroup(raw);
+  if(!map.has(g.key))map.set(g.key,{sector:g.label,key:g.key,real:0,calc:0,freight:0,count:0,details:new Map()});
+  const x=map.get(g.key),real=f.real?num(r[f.real]):0,calc=f.calc?num(r[f.calc]):0,freight=f.freight?num(r[f.freight]):0;
+  x.real+=real;x.calc+=calc;x.freight+=freight;x.count++;
+  if(!x.details.has(raw))x.details.set(raw,{sector:raw,real:0,calc:0,freight:0,count:0});
+  const d=x.details.get(raw);d.real+=real;d.calc+=calc;d.freight+=freight;d.count++;
+ });
+ return [...map.values()].map(x=>({...x,details:[...x.details.values()].sort((a,b)=>a.sector.localeCompare(b.sector,'pt-BR')),grouped:x.key.startsWith('GRUPO_')})).sort((a,b)=>b.calc-a.calc||a.sector.localeCompare(b.sector,'pt-BR'));
 }
 function render(){
  const all=aggregate(), visible=all.filter(x=>!state.hidden.has(x.sector));renderSectors(all);renderTable(visible);renderChart(visible);
@@ -241,13 +257,33 @@ function renderSectors(all){
 }
 function renderTable(data){
  const body=$('#tbody'),foot=$('#tfoot');if(!data.length){body.innerHTML='<tr><td colspan="4" class="no-data">Nenhum setor para exibir.</td></tr>';foot.innerHTML='';return}
- body.innerHTML=data.map(x=>'<tr><td>'+esc(x.sector)+'</td><td>'+fmtKg(x.real)+'</td><td>'+fmtKg(x.calc)+'</td><td>'+fmtMoney(x.freight)+'</td></tr>').join('');
+ body.innerHTML=data.map(x=>{
+  const group='<tr class="'+(x.grouped?'group-row':'')+'"><td>'+esc(x.sector)+'</td><td>'+fmtKg(x.real)+'</td><td>'+fmtKg(x.calc)+'</td><td>'+fmtMoney(x.freight)+'</td></tr>';
+  const detail=x.grouped?x.details.map(d=>'<tr class="detail-row"><td>↳ '+esc(d.sector)+'</td><td>'+fmtKg(d.real)+'</td><td>'+fmtKg(d.calc)+'</td><td>'+fmtMoney(d.freight)+'</td></tr>').join(''):'';
+  return group+detail;
+ }).join('');
  const t=data.reduce((a,x)=>({real:a.real+x.real,calc:a.calc+x.calc,freight:a.freight+x.freight}),{real:0,calc:0,freight:0});
  foot.innerHTML='<tr><td>Total Geral</td><td>'+fmtKg(t.real)+'</td><td>'+fmtKg(t.calc)+'</td><td>'+fmtMoney(t.freight)+'</td></tr>';
 }
 function renderChart(data){
- if(state.chart)state.chart.destroy();const freight=$('#metric').value==='freight',ctx=$('#chart');
- state.chart=new Chart(ctx,{type:'bar',data:{labels:data.map(x=>x.sector),datasets:freight?[{label:'Valor do frete',data:data.map(x=>x.freight),backgroundColor:'#079455',borderRadius:7}]:[{label:'Peso real',data:data.map(x=>x.real),backgroundColor:'#b5121b',borderRadius:7},{label:'Peso calculado',data:data.map(x=>x.calc),backgroundColor:'#f06a72',borderRadius:7}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:data.length>8?'y':'x',plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+(freight?fmtMoney(c.raw):fmtKg(c.raw))}}},scales:{x:{grid:{color:'#eef0f4'},ticks:{callback:v=>freight?fmtMoney(Number(v)):new Intl.NumberFormat('pt-BR').format(v)}},y:{grid:{display:false}}}}});
+ if(state.chart)state.chart.destroy();
+ const mode=$('#metric').value,ctx=$('#chart'),labels=data.map(x=>x.sector);
+ let datasets,scales;
+ if(mode==='both'){
+  datasets=[
+   {type:'bar',label:'Peso real',data:data.map(x=>x.real),backgroundColor:'#b5121b',borderRadius:6,xAxisID:'xWeight'},
+   {type:'bar',label:'Peso calculado',data:data.map(x=>x.calc),backgroundColor:'#f06a72',borderRadius:6,xAxisID:'xWeight'},
+   {type:'line',label:'Valor do frete',data:data.map(x=>x.freight),borderColor:'#079455',backgroundColor:'#079455',pointBackgroundColor:'#fff',pointBorderWidth:3,pointRadius:4,tension:.3,xAxisID:'xFreight'}
+  ];
+  scales={y:{grid:{display:false}},xWeight:{position:'bottom',grid:{color:'#eef0f4'},title:{display:true,text:'Peso (kg)'},ticks:{callback:v=>new Intl.NumberFormat('pt-BR').format(v)}},xFreight:{position:'top',grid:{drawOnChartArea:false},title:{display:true,text:'Valor do frete (R$)'},ticks:{callback:v=>fmtMoney(Number(v))}}};
+ }else if(mode==='freight'){
+  datasets=[{label:'Valor do frete',data:data.map(x=>x.freight),backgroundColor:'#079455',borderRadius:7}];
+  scales={y:{grid:{display:false}},x:{grid:{color:'#eef0f4'},ticks:{callback:v=>fmtMoney(Number(v))}}};
+ }else{
+  datasets=[{label:'Peso real',data:data.map(x=>x.real),backgroundColor:'#b5121b',borderRadius:7},{label:'Peso calculado',data:data.map(x=>x.calc),backgroundColor:'#f06a72',borderRadius:7}];
+  scales={y:{grid:{display:false}},x:{grid:{color:'#eef0f4'},ticks:{callback:v=>new Intl.NumberFormat('pt-BR').format(v)}}};
+ }
+ state.chart=new Chart(ctx,{type:'bar',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.dataset.label.includes('frete')?fmtMoney(c.raw):fmtKg(c.raw))}}},scales}});
 }
 function enable(on){['client','print','export','checkAll','uncheckAll','hideSelected'].forEach(id=>$('#'+id).disabled=!on)}
 function setStatus(msg,type){const s=$('#status');s.textContent=msg;s.className='status '+(type||'')}
